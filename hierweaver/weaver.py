@@ -3,6 +3,8 @@ import networkx as nx
 
 from collections import Counter
 
+__all__ = ['Weaver']
+
 istuple = lambda n: isinstance(n, tuple)
 isdummy = lambda n: None in n
 internals = lambda T: (node for node in T if istuple(node))
@@ -84,8 +86,17 @@ class Weaver(object):
         lengths = set([len(l) for l in value])
         if len(lengths) > 1:
             raise ValueError('partitions must have the same length')
+        # n_nodes = lengths.pop()
 
-        self._partitions = list(value)
+        # if not isinstance(value, np.ndarray):
+        #     arr = np.empty((n_sets, n_nodes), dtype=object)
+        #     for i in range(n_sets):
+        #         for j in range(n_nodes):
+        #             arr[i, j] = value[i][j]
+        # else:
+        #     arr = value
+
+        self._partitions = value
 
     def get_partitions(self):
         return self._partitions
@@ -323,9 +334,9 @@ class Weaver(object):
         terminals = self.terminals
         n_nodes = self.n_terminals
 
-        L.append(list(range(n_nodes)))
+        n_sets = len(L)
 
-        rng = range(len(L))
+        rng = range(n_sets)
         if assume_levels:
             gen = ((i, j) for i, j in product(rng, rng) if i > j)
         else:
@@ -337,35 +348,24 @@ class Weaver(object):
             A = L[i]; B = L[j]
             CI, LA, LB = containment_indices(A, B)
 
-            isileaf = i == len(L)-1
-            isjleaf = j == len(L)-1
-
             for a, la in enumerate(LA):
-                if boolean and not isileaf and not boolize(la):
+                if boolean and not boolize(la):
                     continue
                 for b, lb in enumerate(LB):
-                    if boolean and not isjleaf and not boolize(lb): 
+                    if boolean and not boolize(lb): 
                         continue
                     C = CI[a, b]
                     if C >= cutoff:
                         na = (i, la)
                         nb = (j, lb)
 
-                        # na is named differently if is a leaf. 
-                        if isileaf:
-                            na = terminals[la]
-                            G.add_edge(nb, na, weight=C)
-                        elif isjleaf:
-                            nb = terminals[lb]
-                            G.add_edge(na, nb, weight=C)
-                        else:
-                            if (na, nb) in G.edges:
-                                C0 = G[na][nb]['weight']
-                                if C > C0:
-                                    G.add_edge(nb, na, weight=C)
-                                    G.remove_edge(na, nb)
-                            else:
+                        if (na, nb) in G.edges:
+                            C0 = G[na][nb]['weight']
+                            if C > C0:
                                 G.add_edge(nb, na, weight=C)
+                                G.remove_edge(na, nb)
+                        else:
+                            G.add_edge(nb, na, weight=C)
 
         # remove grandparents (redundant edges)
         redundant = []
@@ -384,6 +384,27 @@ class Weaver(object):
                             redundant.append((b, node))
 
         G.remove_edges_from(redundant)
+
+        # attach graph nodes to leaf nodes in G
+        X = np.arange(n_nodes)
+
+        leaves = []
+        for node in G.nodes:
+            in_deg = G.in_degree(node)
+            out_deg = G.out_degree(node)
+
+            # save leave nodes for later so that we don't need 
+            # to change the size of G.nodes while iterating
+            if in_deg > 0 and out_deg == 0:
+                leaves.append(node)
+
+        for node in leaves:
+            n, ln = node
+            x = [X[i] for i, l in enumerate(L[n]) if l == ln]
+
+            for i in x:
+                ter = terminals[i]
+                G.add_edge(node, ter, weight=1.)
 
         self._full = G
         
@@ -594,8 +615,46 @@ class Weaver(object):
         with open(filename, 'ab') as f:
             nx.write_edgelist(G, f, delimiter='\t', data=['type'])
 
+def containment_indices1(A, B):
+    LA = np.unique(A)
+    LB = np.unique(B)
+
+    CI = np.zeros((len(LA), len(LB)))
+    for i, a in enumerate(LA):
+        tfa = A == a
+        na = np.sum(tfa)
+        for j, b in enumerate(LB):
+            tfb = B == b
+            nb_in_a = np.sum(np.all([tfa, tfb], axis=0))
+            CI[i, j] = float(nb_in_a)/na
+    return CI, LA, LB
+
 def containment_indices(A, B):
-    from collections import Counter
+    from collections import defaultdict
+
+    n = len(A)
+    counterA  = defaultdict(int)
+    counterB  = defaultdict(int)
+    counterAB = defaultdict(int)
+
+    for i in range(n):
+        a = A[i]; b = B[i]
+        
+        counterA[a] += 1
+        counterB[b] += 1
+        counterAB[(a, b)] += 1
+
+    LA = [l for l in counterA]
+    LB = [l for l in counterB]
+
+    CI = np.zeros((len(LA), len(LB)))
+    for i, a in enumerate(LA):
+        for j, b in enumerate(LB):
+            CI[i, j] = counterAB[(a, b)] / counterA[a]
+
+    return CI, LA, LB
+
+def containment_indices_legacy(A, B):
     if len(A) != len(B):
         raise ValueError('A and B must have the same length instead ' +\
                          'of (%d, %d)'%(len(A), len(B)))
@@ -612,7 +671,8 @@ def containment_indices(A, B):
     shape = (len(LA), len(LB))
     CI = np.zeros(shape)
     for i, a in enumerate(LA):
-        BinA = [B[i] for i in range(len(A)) if A[i]==a]
+        #BinA = [B[i] for i in range(len(A)) if A[i]==a]
+        BinA = B[A==a]
         counter = Counter(BinA)
         for b in counter:
             j = LB.index(b)
