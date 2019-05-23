@@ -86,17 +86,17 @@ class Weaver(object):
         lengths = set([len(l) for l in value])
         if len(lengths) > 1:
             raise ValueError('partitions must have the same length')
-        # n_nodes = lengths.pop()
+        n_nodes = lengths.pop()
 
-        # if not isinstance(value, np.ndarray):
-        #     arr = np.empty((n_sets, n_nodes), dtype=object)
-        #     for i in range(n_sets):
-        #         for j in range(n_nodes):
-        #             arr[i, j] = value[i][j]
-        # else:
-        #     arr = value
+        if not isinstance(value, np.ndarray):
+            arr = np.empty((n_sets, n_nodes), dtype=object)
+            for i in range(n_sets):
+                for j in range(n_nodes):
+                    arr[i, j] = value[i][j]
+        else:
+            arr = value
 
-        self._partitions = value
+        self._partitions = arr
 
     def get_partitions(self):
         return self._partitions
@@ -297,18 +297,19 @@ class Weaver(object):
                     rooted = True
         
         if not rooted:
-            L.insert(0, [1]*n_nodes)
+            I = np.ones(n_nodes)
+            L = np.vstack((I, L))
             n_sets += 1
 
         # build tree
-        T = self.build(**kwargs)
+        T = self._build(partitions=L, **kwargs)
 
         # pick parents
         T = self.pick(top)
 
         return T
 
-    def build(self, **kwargs):
+    def _build(self, **kwargs):
         """Finds all the direct parents for the clusters in partitions. This is the first 
         step of weave(). Subclasses can override this function to achieve different results.
 
@@ -326,11 +327,11 @@ class Weaver(object):
         from itertools import product
 
         cutoff = kwargs.pop('cutoff', 0.8)
+        L = kwargs.pop('partitions', self._partitions)
 
         assume_levels = self.assume_levels
         boolean = self.boolean
         
-        L = self._partitions
         terminals = self.terminals
         n_nodes = self.n_terminals
 
@@ -399,8 +400,8 @@ class Weaver(object):
                 leaves.append(node)
 
         for node in leaves:
-            n, ln = node
-            x = [X[i] for i, l in enumerate(L[n]) if l == ln]
+            n, l = node
+            x = X[L[n]==l]
 
             for i in x:
                 ter = terminals[i]
