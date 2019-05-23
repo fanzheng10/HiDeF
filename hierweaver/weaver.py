@@ -371,7 +371,8 @@ class Weaver(object):
         # remove grandparents (redundant edges)
         redundant = []
         for node in G.nodes:
-            parents = [_ for _ in G.predecessors(node)]
+            #parents = [_ for _ in G.predecessors(node)]
+            parents = [_ for _ in nx.ancestors(G, node)]
 
             for a in parents:
                 for b in parents:
@@ -412,7 +413,7 @@ class Weaver(object):
         # find secondary edges
         secondary = []
         for node in G.nodes:
-            parents = [p for p in G.predecessors(node)]
+            parents = [_ for _ in G.predecessors(node)]
             if len(parents) > 1:
                 node_size = self.node_size(node)
                 weights = [G.edges[p, node]['weight'] for p in parents]
