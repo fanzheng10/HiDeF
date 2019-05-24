@@ -486,6 +486,35 @@ class Weaver(object):
             self.stuff_dummies()
         return T
 
+    def root(self):
+        G = self.hier
+        if G is None:
+            raise ValueError('hierarchy not built. Call weave() first')
+
+        for node in G.nodes:
+            ind = G.in_degree(node)
+            if ind == 0:
+                return node
+
+        return None
+
+    def depth(self, node=None, update_attr=True):
+        root = self.root()
+        G = self.hier
+
+        if node is None:
+            D = nx.shortest_path_length(G, root)
+        else:
+            if np.isscalar(node):
+                D = nx.shortest_path_length(G, root, node)
+            else:
+                D = []; nodes = node
+                for node in nodes:
+                    d = nx.shortest_path_length(G, root, node)
+                    D.append(d)
+        
+        return D
+
     def show(self, **kwargs):
         """Visualize the hierarchy using networkx/graphviz hierarchical layouts.
 
