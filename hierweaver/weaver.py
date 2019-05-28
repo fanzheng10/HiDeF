@@ -208,7 +208,7 @@ class Weaver(object):
                     for i in range(1, n):
                         d += 1
                         l = levels[j + i]
-                        #labels = [n[1] for n in T.nodes if istuple(n) if n[0]==l]
+                        #labels = [n[1] for n in T.nodes() if istuple(n) if n[0]==l]
                         #d = getSmallestAvailable(labels)
                         
                         if i == 1:
@@ -360,7 +360,7 @@ class Weaver(object):
                         na = (i, la)
                         nb = (j, lb)
 
-                        if (na, nb) in G.edges:
+                        if (na, nb) in G.edges():
                             C0 = G[na][nb]['weight']
                             if C > C0:
                                 G.add_edge(nb, na, weight=C)
@@ -370,18 +370,18 @@ class Weaver(object):
 
         # remove grandparents (redundant edges)
         redundant = []
-        for node in G.nodes:
+        for node in G.nodes():
             #parents = [_ for _ in G.predecessors(node)]
             parents = [_ for _ in nx.ancestors(G, node)]
 
             for a in parents:
                 for b in parents:
                     if neq(a, b):
-                        if (a, b) in G.edges:
+                        if (a, b) in G.edges():
                             # a is a grandparent
                             redundant.append((a, node))
                             break
-                        if (b, a) in G.edges:
+                        if (b, a) in G.edges():
                             # b is a grandparent
                             redundant.append((b, node))
 
@@ -391,7 +391,7 @@ class Weaver(object):
         X = np.arange(n_nodes)
 
         leaves = []
-        for node in G.nodes:
+        for node in G.nodes():
             in_deg = G.in_degree(node)
             out_deg = G.out_degree(node)
 
@@ -412,11 +412,11 @@ class Weaver(object):
         
         # find secondary edges
         secondary = []
-        for node in G.nodes:
+        for node in G.nodes():
             parents = [_ for _ in G.predecessors(node)]
             if len(parents) > 1:
                 node_size = self.node_size(node)
-                weights = [G.edges[p, node]['weight'] for p in parents]
+                weights = [G.edges()[p, node]['weight'] for p in parents]
 
                 # preference if multiple best
                 if self.assume_levels:
@@ -491,7 +491,7 @@ class Weaver(object):
         if G is None:
             raise ValueError('hierarchy not built. Call weave() first')
 
-        for node in G.nodes:
+        for node in G.nodes():
             ind = G.in_degree(node)
             if ind == 0:
                 return node
@@ -535,7 +535,7 @@ class Weaver(object):
         nodelist = kwargs.pop('nodelist', None)
 
         if nodelist is None:
-            nodelist = self.hier.nodes
+            nodelist = self.hier.nodes()
         
         return show_hierarchy(T, nodelist=nodelist, **kwargs)
 
@@ -627,7 +627,7 @@ class Weaver(object):
         G = self.hier.copy()
         
         if format == 'ddot':
-            for u, v in G.edges:
+            for u, v in G.edges():
                 if istuple(u) and istuple(v):
                     G[u][v]['type'] = 'Child-Parent'
                 else:
@@ -747,7 +747,7 @@ def prune(T):
 
     # prune tree
     # remove dead-ends
-    internal_nodes = [node for node in T.nodes if istuple(node)]
+    internal_nodes = [node for node in T.nodes() if istuple(node)]
     out_degrees = [val for key, val in T.out_degree(internal_nodes)]
 
     while (0 in out_degrees):
@@ -760,7 +760,7 @@ def prune(T):
         out_degrees = [val for key, val in T.out_degree(internal_nodes)]
 
     # remove single branches
-    all_nodes = [node for node in T.nodes]
+    all_nodes = [node for node in T.nodes()]
     for node in all_nodes:
         indeg = T.in_degree(node)
         outdeg = T.out_degree(node)
@@ -798,7 +798,7 @@ def show_hierarchy(T, **kwargs):
         style += '.exe'
 
     if not leaf:
-        T2 = T.subgraph(n for n in T.nodes if istuple(n))
+        T2 = T.subgraph(n for n in T.nodes() if istuple(n))
         if 'nodelist' in kwargs:
             nodes = kwargs.pop('nodelist')
             nonleaves = []
@@ -813,7 +813,7 @@ def show_hierarchy(T, **kwargs):
 
     if edgescale:
         widths = []
-        for u, v in T2.edges:
+        for u, v in T2.edges():
             w = T2[u][v]['weight']*edgescale
             widths.append(w) 
     else:
