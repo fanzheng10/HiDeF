@@ -118,7 +118,7 @@ class Weaver(object):
         if value is None:
             terminals = list(range(self.n_terminals))
         else:
-            terminals = value
+            terminals = [v for v in value]
         
         if len(terminals) != self.n_terminals:
             raise ValueError('terminal nodes size mismatch: %d instead of %d'
@@ -505,7 +505,7 @@ class Weaver(object):
         if node is None:
             D = nx.shortest_path_length(G, root)
         else:
-            if np.isscalar(node):
+            if istuple(node) or np.isscalar(node):
                 D = nx.shortest_path_length(G, root, node)
             else:
                 D = []; nodes = node
@@ -514,6 +514,13 @@ class Weaver(object):
                     D.append(d)
         
         return D
+
+    def get_max_depth(self):
+        depths = self.depth(self.terminals)
+
+        return np.max(depths)
+
+    maxdepth = property(get_max_depth, 'the maximum depth of nodes to the root')   
 
     def show(self, **kwargs):
         """Visualize the hierarchy using networkx/graphviz hierarchical layouts.
