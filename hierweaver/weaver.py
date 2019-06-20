@@ -1,7 +1,7 @@
 import numpy as np
 import networkx as nx
 
-from collections import Counter
+from collections import Counter, defaultdict
 
 __all__ = ['Weaver']
 
@@ -162,7 +162,23 @@ class Weaver(object):
         else:
             s = 1
         return s
-    
+
+    def relabel(self):
+        depth_dict = self.depth()
+        mapping = {}
+        depth_indices = defaultdict(int)
+
+        for node in depth_dict:
+            if istuple(node):
+                depth = depth_dict[node]
+                idx = depth_indices[depth]
+                mapping[node] = (depth, idx)
+
+                depth_indices[depth] += 1
+
+        nx.relabel_nodes(self.hier, mapping, copy=False)
+        return mapping
+
     def stuff_dummies(self):
         """Puts dummy nodes into the hierarchy. The dummy nodes are used 
         in level_cluster() and show() when assume_level is True.
@@ -368,6 +384,19 @@ class Weaver(object):
                         else:
                             G.add_edge(nb, na, weight=C)
 
+        # attach graph nodes to nodes in G
+        X = np.arange(n_nodes)
+
+        nodes = [node for node in G.nodes]
+
+        for node in nodes:
+            n, l = node
+            x = X[L[n]==l]
+
+            for i in x:
+                ter = terminals[i]
+                G.add_edge(node, ter, weight=1.)
+
         # remove grandparents (redundant edges)
         redundant = []
         for node in G.nodes():
@@ -386,27 +415,6 @@ class Weaver(object):
                             redundant.append((b, node))
 
         G.remove_edges_from(redundant)
-
-        # attach graph nodes to leaf nodes in G
-        X = np.arange(n_nodes)
-
-        leaves = []
-        for node in G.nodes():
-            in_deg = G.in_degree(node)
-            out_deg = G.out_degree(node)
-
-            # save leave nodes for later so that we don't need 
-            # to change the size of G.nodes while iterating
-            if in_deg > 0 and out_deg == 0:
-                leaves.append(node)
-
-        for node in leaves:
-            n, l = node
-            x = X[L[n]==l]
-
-            for i in x:
-                ter = terminals[i]
-                G.add_edge(node, ter, weight=1.)
 
         self._full = G
         
@@ -484,6 +492,8 @@ class Weaver(object):
 
         if self.assume_levels:
             self.stuff_dummies()
+        else:
+            self.relabel()
         return T
 
     def root(self):
