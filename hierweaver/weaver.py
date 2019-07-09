@@ -97,6 +97,10 @@ class Weaver(object):
             arr = value
 
         self._partitions = arr
+        self.hier = None
+        self._dhier = None
+        self._full = None
+        self._secondary = None
 
     def get_partitions(self):
         return self._partitions
@@ -151,10 +155,12 @@ class Weaver(object):
         """
 
         L = self._partitions
+        T = self._full
 
         if istuple(node):
             s = 0
-            n, ln = node[:2]
+            n  = T.nodes[node]['index']
+            ln = T.nodes[node]['label']
             # use iteration for data type compatibility
             for l in L[n]:
                 if l == ln:
@@ -207,14 +213,15 @@ class Weaver(object):
         internal_nodes = [node for node in internals(T) if T.in_degree(node)]
 
         for node in internal_nodes:
-            level = node[0]
+            level = T.nodes[node]['index']
             i = levels.index(level)
             parents = [_ for _ in T.predecessors(node)]
             for parent in parents:
                 if not istuple(parent):
                     # unlikely to happen
                     continue
-                plevel = parent[0]
+                plevel = T.nodes[parent]['index']
+                plabel = T.nodes[parent]['label']
                 j = levels.index(plevel)
                 n = i - j
                 if n > 1:
@@ -224,17 +231,20 @@ class Weaver(object):
                     for i in range(1, n):
                         d += 1
                         l = levels[j + i]
-                        #labels = [n[1] for n in T.nodes() if istuple(n) if n[0]==l]
+                        #labels = [n[1] for n in T.nodes() if istuple(n) if T.nodes[n]['index']==l]
                         #d = getSmallestAvailable(labels)
                         
+                        curr = (l, d, None)
                         if i == 1:
-                            T.add_edge(parent, (l, d, None), weight=1)
+                            T.add_edge(parent, curr, weight=1)
                         else:
                             l0 = levels[j + i - 1]
-                            T.add_edge((l0, d-1, None), (l, d, None), weight=1)
+                            T.add_edge((l0, d-1, None), curr, weight=1)
                         #d0 = d
+                        T.nodes[curr]['index'] = plevel
+                        T.nodes[curr]['label'] = plabel
 
-                    T.add_edge((l, d, None), node, weight=1)
+                    T.add_edge(curr, node, weight=1)
         
         self._dhier = T
         return T
@@ -253,15 +263,15 @@ class Weaver(object):
         else:
             internal_nodes = internals(T)
         for node in internal_nodes: 
-            level = node[0]
+            level = T.nodes[node]['index']
             if level not in levels:
                 levels.append(level)
 
         levels.sort()
         return levels
 
-    def somenode(self, level):
-        """Returns the first node that is found at the specified level."""
+    def some_node(self, index):
+        """Returns the first node that is associated with the partition specified by index."""
 
         if self.assume_levels:
             T = self.hier
@@ -269,7 +279,7 @@ class Weaver(object):
             T = self._dhier
 
         for node in internals(T):
-            if node[0] == level:
+            if T.nodes[node]['index'] == index:
                 return node
 
     def weave(self, **kwargs):
@@ -317,8 +327,10 @@ class Weaver(object):
             L = np.vstack((I, L))
             n_sets += 1
 
+        self._partitions = L
+
         # build tree
-        T = self._build(partitions=L, **kwargs)
+        T = self._build(**kwargs)
 
         # pick parents
         T = self.pick(top)
@@ -343,7 +355,7 @@ class Weaver(object):
         from itertools import product
 
         cutoff = kwargs.pop('cutoff', 0.8)
-        L = kwargs.pop('partitions', self._partitions)
+        L = self._partitions
 
         assume_levels = self.assume_levels
         boolean = self.boolean
@@ -383,6 +395,12 @@ class Weaver(object):
                                 G.remove_edge(na, nb)
                         else:
                             G.add_edge(nb, na, weight=C)
+
+                        G.nodes[nb]['index'] = j
+                        G.nodes[nb]['label'] = lb
+
+                        G.nodes[na]['index'] = i
+                        G.nodes[na]['label'] = la
 
         # attach graph nodes to nodes in G
         X = np.arange(n_nodes)
@@ -428,11 +446,11 @@ class Weaver(object):
 
                 # preference if multiple best
                 if self.assume_levels:
-                    pref = [p[0] for p in parents]
+                    pref = [G.nodes[p]['index'] for p in parents]
                 else:
                     pref = []
                     for p in parents:
-                        Lp = L[p[0]]
+                        Lp = L[G.nodes[p]['index']]
                         size = 0
                         gen = (l for l in Lp if l==p[1])
                         for l in gen:
@@ -556,9 +574,9 @@ class Weaver(object):
         
         return show_hierarchy(T, nodelist=nodelist, **kwargs)
 
-    def level_cluster(self, level):
-        """Recovers the cluster represented by all the nodes at a level 
-        in the hierarchy.
+    def level_cluster(self, index):
+        """Recovers the partition that specified by the index based on the 
+        hierarchy.
 
         Returns
         -------
@@ -577,7 +595,8 @@ class Weaver(object):
         nodes = self.terminals
         n_nodes = self.n_terminals
 
-        ancestors = [node for node in internals(T) if node[0]==level]
+        indices = nx.get_node_attributes(T, 'index')
+        ancestors = [node for node in internals(T) if indices[node]==index]
                 
         H = np.zeros(n_nodes, dtype=int)
         for i, node in enumerate(ancestors):
