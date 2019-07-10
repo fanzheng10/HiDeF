@@ -449,20 +449,16 @@ class Weaver(object):
                     pref = [G.nodes[p]['index'] for p in parents]
                 else:
                     pref = []
-                    for p in parents:
-                        Lp = L[G.nodes[p]['index']]
-                        size = 0
-                        gen = (l for l in Lp if l==p[1])
-                        for l in gen:
-                            size -= 1   # use negative size to sort in ascending order when reversed
-                        pref.append(size)
+                    for p, w in zip(parents, weights):
+                        nsize = -w * node_size # use negative size to sort in ascending order when reversed
+                        pref.append(nsize)
 
                 # weight (CI) * node_size gives the size of the union between the node and the parent
-                ranked_edges = [((x[0], node), x[1]*node_size) for x in sorted(zip(parents, weights, pref), 
+                ranked_edges = [((x[0], node), x[2]) for x in sorted(zip(parents, weights, pref), 
                                             key=lambda x: (x[1], x[2]), reverse=True)]
                 secondary.extend(ranked_edges[1:])
 
-        secondary.sort(key=lambda x: x[1], reverse=True)
+        #secondary.sort(key=lambda x: x[1], reverse=True)
 
         self._secondary = secondary
 
@@ -492,14 +488,14 @@ class Weaver(object):
 
         G = self._full.copy()
 
-        W = [x[1] for x in self._secondary]
+        #W = [x[1] for x in self._secondary]
         secondary = [x[0] for x in self._secondary]
 
         if top == 0:
             # special treatment for one-parent case for better performance
             G.remove_edges_from(secondary)
         elif top < 100:
-            n = int(len(W) * top/100.)
+            n = int(len(secondary) * top/100.)
             removed_edges = secondary[n:]
             G.remove_edges_from(removed_edges)
 
