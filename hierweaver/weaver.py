@@ -182,7 +182,7 @@ class Weaver(object):
 
                 depth_indices[depth] += 1
 
-        nx.relabel_nodes(self.hier, mapping, copy=False)
+        self.hier = nx.relabel_nodes(self.hier, mapping, copy=True)
         return mapping
 
     def stuff_dummies(self):
@@ -221,7 +221,6 @@ class Weaver(object):
                     # unlikely to happen
                     continue
                 plevel = T.nodes[parent]['index']
-                plabel = T.nodes[parent]['label']
                 j = levels.index(plevel)
                 n = i - j
                 if n > 1:
@@ -241,8 +240,8 @@ class Weaver(object):
                             l0 = levels[j + i - 1]
                             T.add_edge((l0, d-1, None), curr, weight=1)
                         #d0 = d
-                        T.nodes[curr]['index'] = plevel
-                        T.nodes[curr]['label'] = plabel
+                        T.nodes[curr]['index'] = l
+                        T.nodes[curr]['label'] = None
 
                     T.add_edge(curr, node, weight=1)
         
