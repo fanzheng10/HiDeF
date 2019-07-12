@@ -441,7 +441,7 @@ class Weaver(object):
             parents = [_ for _ in G.predecessors(node)]
             if len(parents) > 1:
                 nsize = self.node_size(node)
-                weights = [G.edges()[p, node]['weight'] for p in parents]
+                #weights = [G.edges()[p, node]['weight'] for p in parents]
 
                 # preference if multiple best
                 # if self.assume_levels:
