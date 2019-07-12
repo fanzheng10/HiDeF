@@ -440,24 +440,31 @@ class Weaver(object):
         for node in G.nodes():
             parents = [_ for _ in G.predecessors(node)]
             if len(parents) > 1:
-                node_size = self.node_size(node)
+                nsize = self.node_size(node)
                 weights = [G.edges()[p, node]['weight'] for p in parents]
 
                 # preference if multiple best
-                if self.assume_levels:
-                    pref = [G.nodes[p]['index'] for p in parents]
-                else:
-                    pref = []
-                    for p, w in zip(parents, weights):
-                        nsize = -w * node_size # use negative size to sort in ascending order when reversed
-                        pref.append(nsize)
+                # if self.assume_levels:
+                #     pref = [G.nodes[p]['index'] for p in parents]
+                # else:
+                #     pref = []
+                #     for p in parents:
+                #         nsize = -self.node_size(p) # use negative size to sort in ascending order when reversed
+                #         pref.append(nsize)
+                pref = []
+                for p in parents:
+                    w = G.edges()[p, node]['weight'] 
+                    psize = self.node_size(p)
+                    usize = w * nsize
+                    j = usize / (nsize + psize - usize)
+                    pref.append(j)
 
                 # weight (CI) * node_size gives the size of the union between the node and the parent
-                ranked_edges = [((x[0], node), x[2]) for x in sorted(zip(parents, weights, pref), 
-                                            key=lambda x: (x[1], x[2]), reverse=True)]
+                ranked_edges = [((x[0], node), x[1]) for x in sorted(zip(parents, pref), 
+                                            key=lambda x: x[1], reverse=True)]
                 secondary.extend(ranked_edges[1:])
 
-        #secondary.sort(key=lambda x: x[1], reverse=True)
+        secondary.sort(key=lambda x: x[1], reverse=True)
 
         self._secondary = secondary
 
