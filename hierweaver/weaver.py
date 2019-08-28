@@ -510,13 +510,16 @@ class Weaver(object):
 
         self.hier = T
 
+        # update attributes
+        self.update_depths()
+
         if self.assume_levels:
             self.stuff_dummies()
         else:
             self.relabel()
         return T
 
-    def root(self):
+    def get_root(self):
         G = self.hier
         if G is None:
             raise ValueError('hierarchy not built. Call weave() first')
@@ -528,22 +531,52 @@ class Weaver(object):
 
         return None
 
-    def depth(self, node=None, update_attr=True):
-        root = self.root()
+    root = property(get_root, 'the root node')   
+    
+    def update_depths(self):
+        if self.hier is None:
+            raise ValueError('hierarchy not built. Call weave() first')
+
+        T = self.hier
+
+        def _update_topdown(parent):
+            par_depth = T.nodes[parent]['depth']
+
+            children = T.successors(parent)
+            for child in children:
+                if 'depth' in T.nodes[child]:  # visited
+                    ch_depth = T.nodes[child]['depth']
+                    if ch_depth <= par_depth + 1:  # already shallower
+                        continue
+
+                T.nodes[child]['depth'] = par_depth + 1
+                _update_topdown(child)
+
+        # update depths topdown
+        root = self.root
+        T.nodes[root]['depth'] = 0
+        _update_topdown(root)
+
+    def depth(self, node=None):
+        if self.hier is None:
+            raise ValueError('hierarchy not built. Call weave() first')
+            
         G = self.hier
 
+        # obtain depths
+        depths = nx.get_node_attributes(G, 'depth')
+
+        # pack results
         if node is None:
-            D = nx.shortest_path_length(G, root)
+            ret = depths
+        elif istuple(node) or np.isscalar(node):
+            ret = depths.pop(node)
         else:
-            if istuple(node) or np.isscalar(node):
-                D = nx.shortest_path_length(G, root, node)
-            else:
-                D = []; nodes = node
-                for node in nodes:
-                    d = nx.shortest_path_length(G, root, node)
-                    D.append(d)
-        
-        return D
+            ret = []
+            for n in node:
+                ret.append(depths[n])
+
+        return ret
 
     def get_max_depth(self):
         depths = self.depth(self.terminals)
@@ -551,6 +584,16 @@ class Weaver(object):
         return np.max(depths)
 
     maxdepth = property(get_max_depth, 'the maximum depth of nodes to the root')   
+
+    def alldepths(self, leaf=True):
+        depth_dict = self.depth()
+
+        if leaf:
+            depths = [depth_dict[k] for k in depth_dict]
+        else:
+            depths = [depth_dict[k] for k in depth_dict if istuple(k)]
+
+        return np.unique(depths)
 
     def show(self, **kwargs):
         """Visualize the hierarchy using networkx/graphviz hierarchical layouts.
@@ -561,15 +604,17 @@ class Weaver(object):
             
         """
 
+        nodelist = kwargs.pop('nodelist', None)
+        dummy = kwargs.pop('dummy', False)
+
+
         if self.hier is None:
             raise ValueError('hierarchy not built. Call weave() first')
 
-        if self.assume_levels:
+        if self.assume_levels and dummy:
             T = self._dhier
         else:
             T = self.hier
-
-        nodelist = kwargs.pop('nodelist', None)
 
         if nodelist is None:
             nodelist = self.hier.nodes()
@@ -611,6 +656,65 @@ class Weaver(object):
 
         return H
 
+    def depth_cluster(self, depth):
+        """Recovers the partition at specified depth.
+
+        Returns
+        -------
+        H : a Numpy array of labels for all the terminal nodes.
+            
+        """
+
+        if self.hier is None:
+            raise ValueError('hierarchy not built. Call weave() first')
+
+        T = self.hier
+
+        nodes = self.terminals
+        n_nodes = self.n_terminals
+
+        depths = self.depth()
+        internal_nodes = [_ for _ in internals(T)]
+        depth_nodes = [_ for _ in internal_nodes if depths[_]==depth]
+
+        # assign labels
+        H = np.zeros(n_nodes, dtype=int)
+        for i, node in enumerate(depth_nodes):
+            desc = (_ for _ in nx.descendants(T, node) 
+                    if not istuple(_))
+            for d in desc:
+                j = nodes.index(d)
+
+                if H[j] == 0:
+                    H[j] = i + 1
+        
+        # find nodes with unassigned 
+        i += 1
+        sec_depth_nodes = {}
+        for j, h in enumerate(H):
+            if h:
+                continue
+
+            node = nodes[j]
+            
+            # pick a parent with the most depth
+            parents = []
+            par_depths = []
+            for parent in T.predecessors(node):
+                parents.append(parent)
+                par_depths.append(depths[parent])
+
+            p = np.argmax(par_depths)
+            parent = parents[p]
+
+            if parent not in sec_depth_nodes:
+                sec_depth_nodes[parent] = H[j] = i + 1
+                i += 1
+            else:
+                H[j] = sec_depth_nodes[parent]
+
+        return H
+
     def node_cluster(self, node):
         """Recovers the cluster represented by a node in the hierarchy.
 
@@ -623,9 +727,9 @@ class Weaver(object):
         if self.hier is None:
             raise ValueError('hierarchy not built. Call weave() first')
 
-        if node in self.hier:
+        if node in self.hier.nodes:
             T = self.hier
-        elif node in self._dhier:
+        elif node in self._dhier.nodes:
             T = self._dhier
         else:
             raise ValueError('node %s not found in hierarchy'%str(node))
