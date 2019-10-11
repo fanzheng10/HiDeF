@@ -179,7 +179,7 @@ def run(G,
         minres=0.01,
         maxres=10):
     # other default parameters
-    min_diff_bisect_value = 1
+    # min_diff_bisect_value = 1
     min_diff_resolution = 0.0001
     kfactor = 2.0
     # number_iterations = 1
@@ -210,9 +210,9 @@ def run(G,
 
         if round(current_range[1] - current_range[0], 4) <= min_diff_resolution:
             continue
-        if resolution_graph.nodes[resname1]['value'] - resolution_graph.nodes[resname2]['value'] < min_diff_bisect_value:
-            # didn't do ensure monotonicity as Van Traag. not sure can that be a problem?
-            continue
+        # if resolution_graph.nodes[resname1]['value'] - resolution_graph.nodes[resname2]['value'] < min_diff_bisect_value:
+        #     # didn't do ensure monotonicity as Van Traag. not sure can that be a problem?
+        #     continue
         if resolution_graph.nodes[resname1]['padded'] and resolution_graph.nodes[resname2]['padded']:
             continue
 
@@ -256,7 +256,7 @@ if __name__ == '__main__':
     par.add_argument('--s', type=float, default=1.0, help='a subsample parameter')
     par.add_argument('--ct', default=100, type=int, help='threshold in collapsing cluster')
     par.add_argument('--o', required=True, help='output file in ddot format')
-    pad.add_argument('--sort', default='int', choices=['int', 'str'])
+    par.add_argument('--sort', default='int', choices=['int', 'str'])
     args = par.parse_args()
 
     G = ig.Graph.Read_Ncol(args.g) # redundant
