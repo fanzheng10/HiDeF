@@ -183,7 +183,7 @@ def run(G,
     min_diff_resolution = 0.0001
     kfactor = 2.0
     # number_iterations = 1
-    G = ig.Graph.Read_Ncol(G)
+    # G = ig.Graph.Read_Ncol(G)
     G.simplify(multiple=False) # remove self loop but keep weight
     cluG = ClusterGraph()
     cluG.graph['sim_threshold'] = jaccard
@@ -256,9 +256,11 @@ if __name__ == '__main__':
     par.add_argument('--s', type=float, default=1.0, help='a subsample parameter')
     par.add_argument('--ct', default=100, type=int, help='threshold in collapsing cluster')
     par.add_argument('--o', required=True, help='output file in ddot format')
+    pad.add_argument('--sort', default='int', choices=['int', 'str'])
     args = par.parse_args()
 
-    cluG = run(args.g,
+    G = ig.Graph.Read_Ncol(args.g) # redundant
+    cluG = run(G,
                density=args.t,
                coreness=args.k,
                jaccard=args.j,
@@ -267,18 +269,44 @@ if __name__ == '__main__':
                maxres=args.maxres
                )
     # # use weaver to organize them (due to the previous collapsed step, need to re-calculate containment index. This may be ok
-    components = sorted(nx.connected_components(cluG), key=len, reverse=True)
-    components = [c for c in components if len(c) >= args.k]
-    cluG_collapsed = collapse_cluster_graph(components, args.ct)
+    # components = sorted(nx.connected_components(cluG), key=len, reverse=True)
+    components = [c for c in nx.connected_components(cluG) if len(c) >= args.k]
+    cluG_collapsed = collapse_cluster_graph(cluG, components, args.ct)
+    cluG_collapsed = sorted(cluG_collapsed, key=lambda x:np.sum(x), reverse=True) # sort by cluster size
 
-    weaver = Weaver(cluG_collapsed, boolean=True, assume_levels=False) # since clusters are mixed, do not assume levels
+    weaver = Weaver(cluG_collapsed, boolean=True, assume_levels=True)
     T = weaver.weave() #
 
+    # output files.
+    # first file: ddot format
+    internals = lambda T: (node for node in T if isinstance(node, tuple))
+    weaver_clusts = []
+    for node in internals(weaver.hier.copy()):
+        weaver_clusts.append((node, weaver.node_cluster(node)))
+    weaver_clusts = sorted(weaver_clusts, key=lambda x: np.sum(x[1]), reverse=True)
+
+    # first a cluster memberhsip file, this is for Seurat visualization
+    if args.sort:
+        ind_order = sorted(np.arange(len(G.vs)), key=lambda x:int(G.vs[x]['name']))
+    else:
+        ind_order = sorted(np.arange(len(G.vs)), key=lambda x:G.vs[x]['name'])
+    for ci in range(len(weaver_clusts)):
+        weaver_clusts[ci][1] = np.array(weaver_clusts[ci][1])[ind_order]
+
+    with open(args.o + '.membership', 'w') as fh:
+        for ci in range(len(weaver_clusts)):
+            cn = '_'.join(map(str, weaver_clusts[ci][0]))
+            cc = weaver_clusts[ci][1]
+            fh.write('Cluster_{}\t'.format(cn) + str(np.sum(cc)) + '\t' + ','.join(
+                (np.where(cc)[0] + 1).astype(str)) + '\n')
 
 
-
-
-
-
-
-
+     # second file, ddot format
+    with open(args.o + '.ddot', 'w') as fh:
+        for e in weaver.hier.edges():
+            if isinstance(e[1], tuple):
+                outstr = 'Cluster_{}\tCluster_{}\tInternal\n'.format('_'.join(map(str, e[0])), '_'.join(map(str, e[1])))
+                fh.write(outstr)
+            else:
+                outstr = 'Cluster_{}\t{}\tLeaf\n'.format('_'.join(map(str, e[1])), G.vs[e[1]]['name'])
+                fh.write(outstr)
