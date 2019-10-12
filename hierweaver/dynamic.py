@@ -72,8 +72,6 @@ class ClusterGraph(nx.Graph): # inherit networkx digraph
                     if similarity > self.graph['sim_threshold']:
                         newedges.append((ni, i, similarity))
 
-        if len(newedges) > 0:
-            pass
         print('add {:d} new edges'.format(len(newedges)))
         for ni, i, s in newedges:
             self.add_edge(ni, i, similarity=s)
@@ -91,13 +89,13 @@ class ClusterGraph(nx.Graph): # inherit networkx digraph
         print('remove {:d} lonely clusters'.format(len(nodes)))
         self.remove_nodes_from(nodes)
 
-    def remove_clusters(self, k):
+    def remove_clusters(self, k, coherence=0.5):
         # find a k-core of the cluster graph
         nodes_to_remove = []
         core_numbers = nx.core_number(self)
         for i, v in core_numbers.items():
             clust = self.nodes[i]['data']
-            if clust.padded and v < k:
+            if clust.padded and v < coherence*k:
                 nodes_to_remove.append(i)
         self.drop_cluster(nodes_to_remove)
 
@@ -173,7 +171,7 @@ def collapse_cluster_graph(cluG, components, threshold=100):
 
 def run(G,
         density=0.1,
-        coreness=5,
+        neighbors=10,
         jaccard=0.75,
         sample=1.0,
         minres=0.01,
@@ -181,8 +179,7 @@ def run(G,
     # other default parameters
     # min_diff_bisect_value = 1
     min_diff_resolution = 0.0001
-    kfactor = 2.0
-    # number_iterations = 1
+
     # G = ig.Graph.Read_Ncol(G)
     G.simplify(multiple=False) # remove self loop but keep weight
     cluG = ClusterGraph()
@@ -196,9 +193,9 @@ def run(G,
     minres_partition = run_alg(G, minres)
     maxres_partition = run_alg(G, maxres)
     update_resolution_graph(resolution_graph, minres,
-                            minres_partition.total_weight_in_all_comms(), density, kfactor*coreness)
+                            minres_partition.total_weight_in_all_comms(), density, neighbors)
     update_resolution_graph(resolution_graph, maxres,
-                            maxres_partition.total_weight_in_all_comms(), density, kfactor*coreness)
+                            maxres_partition.total_weight_in_all_comms(), density, neighbors)
     cluG.add_clusters(minres_partition, minres, resolution_graph)
     cluG.add_clusters(maxres_partition, maxres, resolution_graph)
 
@@ -228,16 +225,16 @@ def run(G,
             new_partition = run_alg(G1, new_resolution)
         else:
             new_partition = run_alg(G, new_resolution)
-        newly_padded_resolution = update_resolution_graph(resolution_graph, new_resolution, new_partition.total_weight_in_all_comms(), density, kfactor*coreness)
+        newly_padded_resolution = update_resolution_graph(resolution_graph, new_resolution, new_partition.total_weight_in_all_comms(), density, neighbors)
         if len(newly_padded_resolution) > 0:
             print(newly_padded_resolution)
         cluG.add_clusters(new_partition, new_resolution, resolution_graph)
 
         print('time elapsed: {:.3f}'.format(time.time() - start))
-        cluG.update_padding(newly_padded_resolution) # think about here. The third parameter needs to be larger than k
+        # cluG.update_padding(newly_padded_resolution) # think about here. The third parameter needs to be larger than k
 
         print('time elapsed: {:.3f}'.format(time.time() - start))
-        cluG.remove_clusters(coreness)
+        # cluG.remove_clusters(neighbors)
          # in
         print('time elapsed: {:.3f}'.format(time.time() - start))
 
@@ -247,8 +244,8 @@ def run(G,
 if __name__ == '__main__':
     par = argparse.ArgumentParser()
     par.add_argument('--g', required=True, help='a tab separated file for the input graph')
-    par.add_argument('--t', required=True, type=float, help='a parameter used in removal of lonely clusters; a lonely cluster (determined by --k) will be removed if some x samples have been sampled within +/- t of the current resolution') # since x is relative to t, doesn't have to set another parameter for x # TODO: re-think definition
-    par.add_argument('--k', type=int, default = 5, help='a parameter to calculate how much lonely nodes to remove (i.e. retain a k-core);')
+    par.add_argument('--t', required=True, type=float, help='a parameter used in removal of lonely clusters; a lonely cluster (determined by --k) will be removed if some x samples have been sampled within +/- t of the current resolution') # since x is relative to t, doesn't have to set another parameter for x #
+    par.add_argument('--k', type=int, default = 10, help='a parameter to calculate how much lonely nodes to remove (i.e. retain a k-core);')
     par.add_argument('--j', type=float, default=0.75, help='a jaccard index cutoff')
     # min and max resolution
     par.add_argument('--minres', type=float, default=0.0001)
@@ -260,9 +257,13 @@ if __name__ == '__main__':
     args = par.parse_args()
 
     G = ig.Graph.Read_Ncol(args.g) # redundant
+
+    # explore the resolution parameter given the number of clusters
+
+
     cluG = run(G,
                density=args.t,
-               coreness=args.k,
+               neighbors=args.k,
                jaccard=args.j,
                sample=args.s,
                minres=args.minres,
@@ -270,7 +271,7 @@ if __name__ == '__main__':
                )
     # # use weaver to organize them (due to the previous collapsed step, need to re-calculate containment index. This may be ok
     # components = sorted(nx.connected_components(cluG), key=len, reverse=True)
-    components = [c for c in nx.connected_components(cluG) if len(c) >= args.k]
+    components = [c for c in nx.connected_components(cluG) if len(c) >= 0.5 * args.k]
     cluG_collapsed = collapse_cluster_graph(cluG, components, args.ct)
     cluG_collapsed = sorted(cluG_collapsed, key=lambda x:np.sum(x), reverse=True) # sort by cluster size
 
