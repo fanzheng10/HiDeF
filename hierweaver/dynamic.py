@@ -51,7 +51,7 @@ class ClusterGraph(nx.Graph): # inherit networkx digraph
             # cluG.add_cluster(clu)
             new_clusters.append(clu)
 
-        print('add {:d} clusters'.format(len(new_clusters)))
+        # print('add {:d} clusters'.format(len(new_clusters)))
 
         # compare c with all existing clusters in clusterGraph (maybe optimized in future)
         if len(self.nodes()) == 0:
@@ -72,7 +72,7 @@ class ClusterGraph(nx.Graph): # inherit networkx digraph
                     if similarity > self.graph['sim_threshold']:
                         newedges.append((ni, i, similarity))
 
-        print('add {:d} new edges'.format(len(newedges)))
+        # print('add {:d} new edges'.format(len(newedges)))
         for ni, i, s in newedges:
             self.add_edge(ni, i, similarity=s)
 
@@ -86,7 +86,7 @@ class ClusterGraph(nx.Graph): # inherit networkx digraph
 
 
     def drop_cluster(self, nodes):
-        print('remove {:d} lonely clusters'.format(len(nodes)))
+        # print('remove {:d} lonely clusters'.format(len(nodes)))
         self.remove_nodes_from(nodes)
 
     def remove_clusters(self, k, coherence=0.5):
@@ -175,7 +175,8 @@ def run(G,
         jaccard=0.75,
         sample=1.0,
         minres=0.01,
-        maxres=10):
+        maxres=10,
+        maxn=None):
     # other default parameters
     # min_diff_bisect_value = 1
     min_diff_resolution = 0.0001
@@ -187,11 +188,39 @@ def run(G,
     cluG.graph['num_leaves'] = len(G.vs)
 
     resolution_graph = nx.Graph()
-    stack_res_range = []
-    stack_res_range.append((minres, maxres))
+
     # perform two initial louvain
     minres_partition = run_alg(G, minres)
-    maxres_partition = run_alg(G, maxres)
+
+    if maxn != None:
+        next= True
+        last_move = ''
+        last_res = maxres
+        while next==True:
+            test_partition = run_alg(G, maxres)
+            # print(len(test_partition))
+            if len(test_partition) < 0.8*maxn:
+                if last_move == 'down':
+                    maxres = np.sqrt(maxres*last_res)
+                else:
+                    maxres = maxres*2.0
+                last_move = 'up'
+            elif len(test_partition) > 1.2*maxn:
+                if last_move == 'up':
+                    maxres = np.sqrt(maxres*last_res)
+                else:
+                    maxres = maxres/2.0
+                last_move = 'down'
+            else:
+                next=False
+        maxres_partition = test_partition
+    else:
+        maxres_partition = run_alg(G, maxres)
+    stack_res_range = []
+    print('Lower bound of resolution parameter: {}'.format(minres))
+    print('Upper bound of resolution parameter: {:.4f}'.format(maxres))
+    stack_res_range.append((minres, maxres))
+
     update_resolution_graph(resolution_graph, minres,
                             minres_partition.total_weight_in_all_comms(), density, neighbors)
     update_resolution_graph(resolution_graph, maxres,
@@ -199,11 +228,11 @@ def run(G,
     cluG.add_clusters(minres_partition, minres, resolution_graph)
     cluG.add_clusters(maxres_partition, maxres, resolution_graph)
 
-    start = time.time()
+    # start = time.time()
     while stack_res_range:
         current_range = stack_res_range.pop(0)
         resname1, resname2 = '{:.4f}'.format(current_range[0]), '{:.4f}'.format(current_range[1])
-        print('Current resolution range:', resname1, resname2)
+        # print('Current resolution range:', resname1, resname2)
 
         if round(current_range[1] - current_range[0], 4) <= min_diff_resolution:
             continue
@@ -216,7 +245,7 @@ def run(G,
         # sample new resolutions and generate more partitions
         new_resolution = np.round(np.sqrt(current_range[1] * current_range[0]), 4)
         resname_new = '{:.4f}'.format(new_resolution)
-        print('New resolution:', resname_new)
+        # print('New resolution:', resname_new)
 
         stack_res_range.append((current_range[0], new_resolution))
         stack_res_range.append((new_resolution, current_range[1]))
@@ -225,26 +254,82 @@ def run(G,
             new_partition = run_alg(G1, new_resolution)
         else:
             new_partition = run_alg(G, new_resolution)
-        newly_padded_resolution = update_resolution_graph(resolution_graph, new_resolution, new_partition.total_weight_in_all_comms(), density, neighbors)
-        if len(newly_padded_resolution) > 0:
-            print(newly_padded_resolution)
+        _ = update_resolution_graph(resolution_graph, new_resolution, new_partition.total_weight_in_all_comms(), density, neighbors)
+        # if len(newly_padded_resolution) > 0:
+        #     print(newly_padded_resolution)
         cluG.add_clusters(new_partition, new_resolution, resolution_graph)
 
-        print('time elapsed: {:.3f}'.format(time.time() - start))
+        # print('time elapsed: {:.3f}'.format(time.time() - start))
         # cluG.update_padding(newly_padded_resolution) # think about here. The third parameter needs to be larger than k
 
-        print('time elapsed: {:.3f}'.format(time.time() - start))
+        # print('time elapsed: {:.3f}'.format(time.time() - start))
         # cluG.remove_clusters(neighbors)
          # in
-        print('time elapsed: {:.3f}'.format(time.time() - start))
+        # print('time elapsed: {:.3f}'.format(time.time() - start))
 
     # collapse related clusters
     return cluG
 
+def consensus(cluG, k,  f, ct):
+    nodes_to_remove = []
+    core_numbers = nx.core_number(cluG)
+    for i, v in core_numbers.items():
+        if v < 0.5 * k:
+            nodes_to_remove.append(i)
+    cluG2 = cluG.copy()
+    cluG2.remove_nodes_from(nodes_to_remove)
+
+    components = [c for c in nx.connected_components(cluG2)]
+    components = sorted(components, key=len, reverse=True)
+    ntaken = f * len(components)
+    components = components[:ntaken]  #
+    # csize = len(components[0]) * f
+    # components = [c for c in components if len(c) >= csize]
+    # TODO: whether it should be smarter than that?
+
+    cluG_collapsed = collapse_cluster_graph(cluG2, components, ct)
+    cluG_collapsed = sorted(cluG_collapsed, key=lambda x: np.sum(x), reverse=True)  # sort by cluster size
+    return cluG_collapsed
+
+def output1(weaver, G, out, sort='int'):
+    internals = lambda T: (node for node in T if isinstance(node, tuple))
+    weaver_clusts = []
+    for node in internals(weaver.hier.copy()):
+        weaver_clusts.append((node, weaver.node_cluster(node)))
+    weaver_clusts = sorted(weaver_clusts, key=lambda x: np.sum(x[1]), reverse=True)
+
+    # first a cluster memberhsip file, this is for Seurat visualization
+    if sort=='int':
+        ind_order = sorted(np.arange(len(G.vs)), key=lambda x: int(G.vs[x]['name']))
+    else:
+        ind_order = sorted(np.arange(len(G.vs)), key=lambda x: G.vs[x]['name'])
+    for ci in range(len(weaver_clusts)):
+        weaver_clusts[ci][1] = np.array(weaver_clusts[ci][1])[ind_order]
+
+    with open(out + '.membership', 'w') as fh:
+        for ci in range(len(weaver_clusts)):
+            cn = '_'.join(map(str, weaver_clusts[ci][0]))
+            cc = weaver_clusts[ci][1]
+            fh.write('Cluster_{}\t'.format(cn) + str(np.sum(cc)) + '\t' + ','.join(
+                (np.where(cc)[0] + 1).astype(str)) + '\n')
+
+def output2(weaver, G, out):
+    with open(out+ '.ddot', 'w') as fh:
+        for e in weaver.hier.edges():
+            if isinstance(e[1], tuple):
+                outstr = 'Cluster_{}\tCluster_{}\tInternal\n'.format('_'.join(map(str, e[0])), '_'.join(map(str, e[1])))
+                fh.write(outstr)
+            else:
+                outstr = 'Cluster_{}\t{}\tLeaf\n'.format('_'.join(map(str, e[1])), G.vs[e[1]]['name'])
+                fh.write(outstr)
+
+
 if __name__ == '__main__':
     par = argparse.ArgumentParser()
     par.add_argument('--g', required=True, help='a tab separated file for the input graph')
-    par.add_argument('--t', required=True, type=float, help='a parameter used in removal of lonely clusters; a lonely cluster (determined by --k) will be removed if some x samples have been sampled within +/- t of the current resolution') # since x is relative to t, doesn't have to set another parameter for x #
+    par.add_argument('--f', required=True, type=float, help='a parameter controlling the complexity of the hierarchy. From 0 to 1')
+    par.add_argument('--n', default=50, type=int, help= 'an intuitive  parameter for the upper limit of resolution parameter')
+    par.add_argument('--t', type=float, default=0.1, help='a parameter used in removal of lonely clusters; a lonely cluster (determined by --k) will be removed if some x samples have been sampled within +/- t of the current resolution') # since x is relative to t, doesn't have to set another parameter for x #
     par.add_argument('--k', type=int, default = 10, help='a parameter to calculate how much lonely nodes to remove (i.e. retain a k-core);')
     par.add_argument('--j', type=float, default=0.75, help='a jaccard index cutoff')
     # min and max resolution
@@ -267,47 +352,16 @@ if __name__ == '__main__':
                jaccard=args.j,
                sample=args.s,
                minres=args.minres,
-               maxres=args.maxres
+               maxres=args.maxres,
+               maxn=args.n
                )
     # # use weaver to organize them (due to the previous collapsed step, need to re-calculate containment index. This may be ok
     # components = sorted(nx.connected_components(cluG), key=len, reverse=True)
-    components = [c for c in nx.connected_components(cluG) if len(c) >= 0.5 * args.k]
-    cluG_collapsed = collapse_cluster_graph(cluG, components, args.ct)
-    cluG_collapsed = sorted(cluG_collapsed, key=lambda x:np.sum(x), reverse=True) # sort by cluster size
+    cluG_collapsed = consensus(cluG, args.k, args.f, args.ct)
 
     weaver = Weaver(cluG_collapsed, boolean=True, assume_levels=True)
     T = weaver.weave() #
 
-    # output files.
-    # first file: ddot format
-    internals = lambda T: (node for node in T if isinstance(node, tuple))
-    weaver_clusts = []
-    for node in internals(weaver.hier.copy()):
-        weaver_clusts.append((node, weaver.node_cluster(node)))
-    weaver_clusts = sorted(weaver_clusts, key=lambda x: np.sum(x[1]), reverse=True)
+    output1(weaver, G, args.o, sort=args.sort)
 
-    # first a cluster memberhsip file, this is for Seurat visualization
-    if args.sort:
-        ind_order = sorted(np.arange(len(G.vs)), key=lambda x:int(G.vs[x]['name']))
-    else:
-        ind_order = sorted(np.arange(len(G.vs)), key=lambda x:G.vs[x]['name'])
-    for ci in range(len(weaver_clusts)):
-        weaver_clusts[ci][1] = np.array(weaver_clusts[ci][1])[ind_order]
-
-    with open(args.o + '.membership', 'w') as fh:
-        for ci in range(len(weaver_clusts)):
-            cn = '_'.join(map(str, weaver_clusts[ci][0]))
-            cc = weaver_clusts[ci][1]
-            fh.write('Cluster_{}\t'.format(cn) + str(np.sum(cc)) + '\t' + ','.join(
-                (np.where(cc)[0] + 1).astype(str)) + '\n')
-
-
-     # second file, ddot format
-    with open(args.o + '.ddot', 'w') as fh:
-        for e in weaver.hier.edges():
-            if isinstance(e[1], tuple):
-                outstr = 'Cluster_{}\tCluster_{}\tInternal\n'.format('_'.join(map(str, e[0])), '_'.join(map(str, e[1])))
-                fh.write(outstr)
-            else:
-                outstr = 'Cluster_{}\t{}\tLeaf\n'.format('_'.join(map(str, e[1])), G.vs[e[1]]['name'])
-                fh.write(outstr)
+    output2(weaver, G, args.o)
