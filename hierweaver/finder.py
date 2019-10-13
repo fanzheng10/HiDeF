@@ -173,7 +173,7 @@ def run(G,
         density=0.1,
         neighbors=10,
         jaccard=0.75,
-        sample=1.0,
+        sample=0.9,
         minres=0.01,
         maxres=10,
         maxn=None):
