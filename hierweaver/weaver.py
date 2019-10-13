@@ -63,10 +63,10 @@ class Weaver(object):
     """
 
     __slots__ = ['_partitions', '_terminals', 'assume_levels', 'hier', 
-                 '_dhier', '_full', 'boolean', '_secondary']
+                 '_dhier', '_full', 'boolean', '_secondary', 'clevels']
 
     def __init__(self, partitions, terminals=None, assume_levels=False, 
-                 boolean=False):
+                 boolean=False, clevels=None):
         self.partitions = partitions
         self.terminals = terminals
 
@@ -76,6 +76,10 @@ class Weaver(object):
         self.boolean = boolean
         self._full = None
         self._secondary = None
+        if clevels != None:
+            self.clevels = clevels
+        else:
+            self.clevels = [i for i in range(len(partitions))]
 
     def set_partitions(self, value):
         # checkers
@@ -294,7 +298,7 @@ class Weaver(object):
             (except for the root which has none). 
 
         cutoff : keyword argument (0.5 ~ 1.0, default=0.8)
-            containment index cutoff for claiming parenthood. 
+            containment index cutoff for claiming parenthood. c
 
         See Also
         --------
@@ -325,6 +329,8 @@ class Weaver(object):
             I = np.ones(n_nodes)
             L = np.vstack((I, L))
             n_sets += 1
+            self.clevels = [i+1 for i in self.clevels]
+            self.clevels.insert(0, 0)
 
         self._partitions = L
 
@@ -366,7 +372,8 @@ class Weaver(object):
 
         rng = range(n_sets)
         if assume_levels:
-            gen = ((i, j) for i, j in product(rng, rng) if i > j)
+            print(len(rng), len(self.clevels))
+            gen = ((i, j) for i, j in product(rng, rng) if self.clevels[i] > self.clevels[j])
         else:
             gen = ((i, j) for i, j in product(rng, rng) if i != j)
     
