@@ -31,6 +31,11 @@ class Cluster(object):
 
 
     def calculate_similarity(self, cluster2):
+        '''
+        calculate Jaccard similarity.
+        :param cluster2: another Cluster object
+        :return: 
+        '''
         # jaccard index
         arr1, arr2 = self.binary, cluster2.binary
         both = np.dot(arr1, arr2)
@@ -38,8 +43,17 @@ class Cluster(object):
         return 1.0 * both / either
 
 class ClusterGraph(nx.Graph): # inherit networkx digraph
+    '''
+    Extending nx.Graph class, each node is a Cluster object
+    '''
 
     def add_clusters(self, resolution_graph, new_resolution):
+        '''
+        Add new clusters to cluster graph once a new resolution is finished by the CD algorithm
+        :param resolution_graph: another nx.Graph object 
+        :param new_resolution: the resolution just visited by the CD algorithm
+        :return: 
+        '''
         resname_new = '{:.4f}'.format(new_resolution)
         new_clusters = []
         new_mat = resolution_graph.nodes[resname_new]['matrix']
@@ -57,20 +71,6 @@ class ClusterGraph(nx.Graph): # inherit networkx digraph
         else:
             newnode = np.arange(max(self.nodes()) +1, max(self.nodes()) +1 + len(new_clusters))
         resolution_graph.nodes[resname_new]['node_indices'] = newnode
-
-
-        # newedges = []
-        # for nci in range(len(new_clusters)):
-        #     nc = new_clusters[nci]
-        #     ni = newnode[nci]
-        #     for i, c in self.nodes.items():
-        #         resname_c = c['data'].resolution_parameter
-        #         if resname_c in resolution_graph[resname_new]:
-        #             if 1.0 * min(nc.size, c['data'].size)/max(nc.size, c['data'].size) < self.graph['sim_threshold'] :
-        #                 continue
-        #             similarity = nc.calculate_similarity(c['data'])
-        #             if similarity > self.graph['sim_threshold']:
-        #                 newedges.append((ni, i, similarity))
 
         # compare against all other resolutions within range
         newedges = []
@@ -100,10 +100,21 @@ class ClusterGraph(nx.Graph): # inherit networkx digraph
             # self.nodes[ni]['data'].index = ni
 
     def drop_cluster(self, nodes):
+        '''
+        deprecated
+        :param nodes: 
+        :return: 
+        '''
         # print('remove {:d} lonely clusters'.format(len(nodes)))
         self.remove_nodes_from(nodes)
 
     def remove_clusters(self, k, coherence=0.5):
+        '''
+        deprecated
+        :param k: 
+        :param coherence: 
+        :return: 
+        '''
         # find a k-core of the cluster graph
         nodes_to_remove = []
         core_numbers = nx.core_number(self)
@@ -114,13 +125,25 @@ class ClusterGraph(nx.Graph): # inherit networkx digraph
         self.drop_cluster(nodes_to_remove)
 
     def update_padding(self, newly_padded_resolution):
+        '''
+        deprecated
+        :param newly_padded_resolution: 
+        :return: 
+        '''
         for i, c in self.nodes.items():
             clust = self.nodes[i]['data']
             if clust.resolution_parameter in newly_padded_resolution:
                 clust.padded = True
 
 def jaccard_matrix(matA, matB, threshold=0.75, prefilter = False): # assume matA, matB are sorted
-    # prefiltered version has bugs and doesn't seem to to
+    '''
+    calculate jaccard matrix between all pairs between two sets of clusters
+    :param matA: scipy.sparse.csr_matrix, axis 0 for clusters, axis 1 for nodes in network
+    :param matB: similar to matA; cluster set under a different resolution parameter
+    :param threshold: a Jaccard similarity cutoff
+    :param prefilter: pre-filter the pairs to compare with a lower bound (didn't seem to speed up much)
+    :return: two sets of indices; the cluster pairs implied by those indices satisfied threshold
+    '''
     if prefilter: # does not have much speed advantage
         sizeA = np.ravel(np.asarray(np.sum(matA, axis=1)))
         sizeB = np.ravel(np.asarray(np.sum(matB, axis=1)))
@@ -169,12 +192,24 @@ def run_alg(G, gamma=1.0):
     return partition
 
 def network_perturb(G, sample=0.8):
+    '''
+    perturb the network by randomly deleting some edges
+    :param G: input network
+    :param sample: the fraction of edges to retain
+    :return: the perturbed graph
+    '''
     G1 = G.copy()
     edges_to_remove = [e.index for e in G1.es if np.random.rand() > sample]
     G1.delete_edges(edges_to_remove)
     return G1
 
 def partition_to_membership_matrix(partition, minsize=4):
+    '''
+    
+    :param partition: class partition in the louvain-igraph package
+    :param minsize: minimum size of clusters; smaller clusters will be deleted afterwards 
+    :return: 
+    '''
     clusters = sorted([p for p in partition if len(p) >=minsize], key=len, reverse=True)
     row, col = [], []
     for i in range(len(clusters)):
@@ -189,6 +224,16 @@ def partition_to_membership_matrix(partition, minsize=4):
 
 
 def update_resolution_graph(G, new_resolution, partition, value, neighborhood_size, neighbor_density_threshold):
+    '''
+    Update the "resolution graph", which connect resolutions that are close enough
+    :param G: nx.Graph; the "resolution graph"
+    :param new_resolution: the resolution just visited by the CD algorithm 
+    :param partition: partition generated by 
+    :param value: deprecated
+    :param neighborhood_size: if two resolutions (log-scale) differs smaller than this value, they are called 'neighbors'
+    :param neighbor_density_threshold: if a resolution has neighbors more than this number, it is called "padded". No more sampling will happen between two padded resolutions
+    :return: 
+    '''
     nodename = '{:.4f}'.format(new_resolution)
     membership = partition_to_membership_matrix(partition)
     G.add_node(nodename, resolution = new_resolution,
@@ -223,9 +268,9 @@ def update_resolution_graph(G, new_resolution, partition, value, neighborhood_si
 def collapse_cluster_graph(cluG, components, threshold=100):
     '''
     take the cluster graph and collapse each component based on some consensus metric
+    :param cluG: the ClusterGraph object
     :param components: a list of list, each element of the inner list is a binary membership array
     :param threshold: t; remove nodes if they did not appear in more than t percent of clusters in one component 
-    :return: collapsed_clusters: a list of arrays, of which the length is equal to that of components
     '''
     collapsed_clusters = []
     for component in components:
@@ -247,6 +292,19 @@ def run(G,
         maxn=None,
         bisect=False):
     # other default parameters
+    '''
+    Main function to run the Finder program
+    :param G: input network
+    :param density: inversed density of sampling resolution parameter. Use a smaller value to increase sample density (will increase running time)
+    :param neighbors: also affect sampling density; a larger value may have additional benefits of stabilizing clustering results
+    :param jaccard: a cutoff to call two clusters similar
+    :param sample: parameter to perturb input network in each run by deleting edges; lower values delete more
+    :param minres: minimum resolution parameter
+    :param maxres: maximum resolution parameter
+    :param maxn: will explore resolution parameter until cluster number is similar to this number; will override 'maxres'
+    :param bisect: if set to True, if solutions between two resolutions look similar, halt sampling in between. Could reduce stability a little
+    :return: 
+    '''
     min_diff_bisect_value = 1
     min_diff_resolution = 0.0001
 
@@ -341,6 +399,14 @@ def run(G,
     return cluG
 
 def consensus(cluG, k,  f, ct):
+    '''
+    create a more parsimonious results from the cluster graph
+    :param cluG: the cluster graph
+    :param k: delete clusters with lower degree
+    :param f: take this fraction of clusters (ordered by degree in cluster graph)
+    :param ct: nodes that do not participate in the majority of clusters in a component will be removed
+    :return: 
+    '''
     nodes_to_remove = []
     core_numbers = nx.core_number(cluG)
     for i, v in core_numbers.items():
@@ -414,18 +480,18 @@ def output_cytoscape(weaver, G, out):
 if __name__ == '__main__':
     par = argparse.ArgumentParser()
     par.add_argument('--g', required=True, help='a tab separated file for the input graph')
-    par.add_argument('--f', required=True, type=float, help='a parameter controlling the complexity of the hierarchy. From 0 to 1')
-    par.add_argument('--n', default=50, type=int, help= 'an intuitive  parameter for the upper limit of resolution parameter')
-    par.add_argument('--t', type=float, default=0.1, help='a parameter used in removal of lonely clusters; a lonely cluster (determined by --k) will be removed if some x samples have been sampled within +/- t of the current resolution') # since x is relative to t, doesn't have to set another parameter for x #
-    par.add_argument('--k', type=int, default = 10, help='a parameter to calculate how much lonely nodes to remove (i.e. retain a k-core);')
+    par.add_argument('--f', required=True, type=float, help='a parameter controlling the complexity of the hierarchy. From 0 to 1. Lower this number to generate a more complex hierarchy, with more transient clusters')
+    par.add_argument('--n', default=50, type=int, help= 'explore the maximum resolution parameter until cluster number is close enough to this value. Increase this number to get more smaller clusters')
+    par.add_argument('--t', type=float, default=0.1, help='(inversed) density of sampling the resolution parameter; decrease this number to introduce more transient clusters (with longer running time); partially redundant to --f')
+    par.add_argument('--k', type=int, default = 10, help='a parameter to pre-filter instable clusters (i.e. retain a k-core); partially redundant to --f')
     par.add_argument('--j', type=float, default=0.75, help='a jaccard index cutoff')
     # min and max resolution
-    par.add_argument('--minres', type=float, default=0.0001)
-    par.add_argument('--maxres', type=float, default=100.0)
+    par.add_argument('--minres', type=float, default=0.001, help='minimum resolution parameter')
+    par.add_argument('--maxres', type=float, default=100.0, help='maximum resolution parameter')
     par.add_argument('--s', type=float, default=1.0, help='a subsample parameter')
     par.add_argument('--ct', default=100, type=int, help='threshold in collapsing cluster')
     par.add_argument('--o', required=True, help='output file in ddot format')
-    par.add_argument('--sort', default='int', choices=['int', 'str'])
+    par.add_argument('--sort', default='int', choices=['int', 'str'], help='type of node names in the input network')
     args = par.parse_args()
 
     G = ig.Graph.Read_Ncol(args.g) # redundant
