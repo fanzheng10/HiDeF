@@ -106,7 +106,7 @@ class ClusterGraph(nx.Graph): # inherit networkx digraph
                 clust.padded = True
 
 
-def run_alg(G, gamma):
+def run_alg(G, gamma, minsize=4):
     '''
     run community detection algorithm with resolution parameter. Right now only use RB in Louvain
     :param G: an igraph graph
@@ -115,6 +115,8 @@ def run_alg(G, gamma):
     '''
     partition_type = louvain.RBConfigurationVertexPartition
     partition = louvain.find_partition(G, partition_type, resolution_parameter=gamma)
+    partition = sorted(partition, key=len, reverse=True)
+    partition = [p for p in partition if p >=minsize ]
     return partition
 
 def network_perturb(G, sample=0.8):
@@ -176,9 +178,10 @@ def run(G,
         sample=0.9,
         minres=0.01,
         maxres=10,
-        maxn=None):
+        maxn=None,
+        bisect=False):
     # other default parameters
-    # min_diff_bisect_value = 1
+    min_diff_bisect_value = 1
     min_diff_resolution = 0.0001
 
     # G = ig.Graph.Read_Ncol(G)
@@ -236,9 +239,10 @@ def run(G,
 
         if round(current_range[1] - current_range[0], 4) <= min_diff_resolution:
             continue
-        # if resolution_graph.nodes[resname1]['value'] - resolution_graph.nodes[resname2]['value'] < min_diff_bisect_value:
-        #     # didn't do ensure monotonicity as Van Traag. not sure can that be a problem?
-        #     continue
+        if bisect:
+            if resolution_graph.nodes[resname1]['value'] - resolution_graph.nodes[resname2]['value'] < min_diff_bisect_value:
+                # didn't do ensure monotonicity as Van Traag. not sure can that be a problem?
+                continue
         if resolution_graph.nodes[resname1]['padded'] and resolution_graph.nodes[resname2]['padded']:
             continue
 
@@ -291,7 +295,7 @@ def consensus(cluG, k,  f, ct):
     cluG_collapsed = sorted(cluG_collapsed, key=lambda x: np.sum(x), reverse=True)  # sort by cluster size
     return cluG_collapsed
 
-def output1(weaver, G, out, sort='int'):
+def output_cluster(weaver, G, out, sort='int'):
     internals = lambda T: (node for node in T if isinstance(node, tuple))
     weaver_clusts = []
     for node in internals(weaver.hier.copy()):
@@ -313,16 +317,33 @@ def output1(weaver, G, out, sort='int'):
             fh.write('Cluster_{}\t'.format(cn) + str(np.sum(cc)) + '\t' + ','.join(
                 (np.where(cc)[0] + 1).astype(str)) + '\n')
 
-def output2(weaver, G, out):
+def output_ddot(weaver, G, out, leaf = False):
     with open(out+ '.ddot', 'w') as fh:
         for e in weaver.hier.edges():
             if isinstance(e[1], tuple):
                 outstr = 'Cluster_{}\tCluster_{}\tInternal\n'.format('_'.join(map(str, e[0])), '_'.join(map(str, e[1])))
                 fh.write(outstr)
-            else:
+            elif leaf:
                 outstr = 'Cluster_{}\t{}\tLeaf\n'.format('_'.join(map(str, e[1])), G.vs[e[1]]['name'])
                 fh.write(outstr)
 
+def output_cytoscape(weaver, G, out):
+
+    dict_node_size = {n :weaver.node_size(n) for n in weaver.hier.nodes() if isinstance(n, tuple)}
+    nx.set_node_attributes(weaver.hier, dict_node_size, 'size')
+
+    # remove all leaf nodes
+    Gout = weaver.hier.copy()
+    nodes_to_remove = [n for n in Gout.nodes() if not isinstance(n, tuple)]
+    Gout.remove_nodes_from(nodes_to_remove)
+
+    # relabel nodes (tuple not compatible)
+    mapping = {n: str(n[0]) +'_'+ str(n[1]) for n in Gout.nodes()}
+    Gout = nx.relabel_nodes(Gout, mapping, copy=False)
+
+    nx.write_gml(Gout, out +".gml")
+
+    # TODO: upload to NDEx
 
 if __name__ == '__main__':
     par = argparse.ArgumentParser()
@@ -362,6 +383,8 @@ if __name__ == '__main__':
     weaver = Weaver(cluG_collapsed, boolean=True, assume_levels=True)
     T = weaver.weave() #
 
-    output1(weaver, G, args.o, sort=args.sort)
+    output_cluster(weaver, G, args.o, sort=args.sort)
+    output_ddot(weaver, G, args.o)
+    output_cytoscape(weaver, G, args.o)
 
-    output2(weaver, G, args.o)
+

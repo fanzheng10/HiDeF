@@ -321,7 +321,7 @@ class Weaver(object):
         for l in reversed(L):
             if all_equal(l):
                 if rooted:
-                    L.remove(l)
+                    L.remove(l) # TODO: had a problem here (infrequently)
                 else:
                     rooted = True
         
