@@ -3,6 +3,7 @@ import networkx as nx
 import igraph as ig
 import argparse
 import numpy as np
+import scipy as sp
 import time
 from weaver import *
 import pickle
@@ -43,10 +44,13 @@ class Cluster(object):
 
 class ClusterGraph(nx.Graph): # inherit networkx digraph
 
-    def add_clusters(self, new_partition, new_resolution, resolution_graph):
+    def add_clusters(self, new_partition, new_resolution, resolution_graph, minsize=4):
         resname_new = '{:.4f}'.format(new_resolution)
         new_clusters = []
+
         for c in new_partition: # c is a list of node indices
+            if len(c) < minsize:
+                continue
             clu = Cluster(c, self.graph['num_leaves'], new_resolution)
             # cluG.add_cluster(clu)
             new_clusters.append(clu)
@@ -105,8 +109,29 @@ class ClusterGraph(nx.Graph): # inherit networkx digraph
             if clust.resolution_parameter in newly_padded_resolution:
                 clust.padded = True
 
+def jaccard_matrix(matA, matB, threshold=0.75): # assume matA, matB are sorted
+    length = matA.shape[1]
+    sizeA = np.sum(matA, axis=1)
+    sizeB = np.sum(matB, axis=1)
+    idA, idB = [], []
+    for i in range(sizeA):
+        for j in range(sizeB):
+            if 1.0 * min(sizeA[i], sizeB[j])/max(sizeA[i], sizeB[j]) < threshold:
+                continue
+            else:
+                idA.append(i)
+                idB.append(j)
+    idA = np.array(idA)
+    idB = np.array(idB)
+    both = np.matmul(matA[idA], matB[idB].T)
+    either = length - np.matmul(1-matA[idA], 1-matB[idB].T)
+    jac = 1.0*both/either
+    jactrue = (jac > threshold)
+    return np.where(jactrue)
 
-def run_alg(G, gamma, minsize=4):
+
+
+def run_alg(G, gamma):
     '''
     run community detection algorithm with resolution parameter. Right now only use RB in Louvain
     :param G: an igraph graph
@@ -115,8 +140,7 @@ def run_alg(G, gamma, minsize=4):
     '''
     partition_type = louvain.RBConfigurationVertexPartition
     partition = louvain.find_partition(G, partition_type, resolution_parameter=gamma)
-    partition = sorted(partition, key=len, reverse=True)
-    partition = [p for p in partition if p >=minsize ]
+    # partition = sorted(partition, key=len, reverse=True)
     return partition
 
 def network_perturb(G, sample=0.8):
