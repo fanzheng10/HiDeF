@@ -6,7 +6,6 @@ import numpy as np
 import scipy as sp
 import time
 from weaver import *
-import pickle
 
 
 class Cluster(object):
@@ -14,23 +13,19 @@ class Cluster(object):
                  'members',
                  'binary',
                  'padded',
-                 'index',
                  'resolution_parameter']
 
-    def __init__(self, member, length, gamma):
+    def __init__(self, binary, length, gamma):
         '''initialize
         member: a list of member index (start from 0)
         size: number of cluster member
         length:  
         gamma: resolution parameter
          '''
-        self.members = member
-        self.size = len(member)
+        self.binary = np.squeeze(np.asarray(binary.todense()))
+        self.members = np.where(self.binary)[0]
+        self.size = len(self.members)
         self.resolution_parameter = '{:.4f}'.format(gamma)
-        binary = np.zeros(length,dtype=np.int)
-        for m in member:
-            binary[m] = 1
-        self.binary = binary
         self.padded = False
         # self.index=None
 
@@ -44,14 +39,13 @@ class Cluster(object):
 
 class ClusterGraph(nx.Graph): # inherit networkx digraph
 
-    def add_clusters(self, new_partition, new_resolution, resolution_graph, minsize=4):
+    def add_clusters(self, resolution_graph, new_resolution):
         resname_new = '{:.4f}'.format(new_resolution)
         new_clusters = []
+        new_mat = resolution_graph.nodes[resname_new]['matrix']
 
-        for c in new_partition: # c is a list of node indices
-            if len(c) < minsize:
-                continue
-            clu = Cluster(c, self.graph['num_leaves'], new_resolution)
+        for i in range(new_mat.shape[0]): # c is a list of node indices
+            clu = Cluster(new_mat[i, :], self.graph['num_leaves'], new_resolution)
             # cluG.add_cluster(clu)
             new_clusters.append(clu)
 
@@ -59,26 +53,43 @@ class ClusterGraph(nx.Graph): # inherit networkx digraph
 
         # compare c with all existing clusters in clusterGraph (maybe optimized in future)
         if len(self.nodes()) == 0:
-            newnode = list(range(0, len(new_clusters)))
+            newnode = np.arange(0, len(new_clusters))
         else:
-            newnode = list(range(max(self.nodes()) +1, max(self.nodes()) +1 + len(new_clusters)))
+            newnode = np.arange(max(self.nodes()) +1, max(self.nodes()) +1 + len(new_clusters))
+        resolution_graph.nodes[resname_new]['node_indices'] = newnode
 
+
+        # newedges = []
+        # for nci in range(len(new_clusters)):
+        #     nc = new_clusters[nci]
+        #     ni = newnode[nci]
+        #     for i, c in self.nodes.items():
+        #         resname_c = c['data'].resolution_parameter
+        #         if resname_c in resolution_graph[resname_new]:
+        #             if 1.0 * min(nc.size, c['data'].size)/max(nc.size, c['data'].size) < self.graph['sim_threshold'] :
+        #                 continue
+        #             similarity = nc.calculate_similarity(c['data'])
+        #             if similarity > self.graph['sim_threshold']:
+        #                 newedges.append((ni, i, similarity))
+
+        # compare against all other resolutions within range
         newedges = []
-        for nci in range(len(new_clusters)):
-            nc = new_clusters[nci]
-            ni = newnode[nci]
-            for i, c in self.nodes.items():
-                resname_c = c['data'].resolution_parameter
-                if resname_c in resolution_graph[resname_new]:
-                    if 1.0 * min(nc.size, c['data'].size)/max(nc.size, c['data'].size) < self.graph['sim_threshold'] :
-                        continue
-                    similarity = nc.calculate_similarity(c['data'])
-                    if similarity > self.graph['sim_threshold']:
-                        newedges.append((ni, i, similarity))
+        for r in resolution_graph.nodes():
+            if r == resname_new: # itself
+                continue
+            if r in resolution_graph[resname_new]: # resolution in close proximity
+                r_node_ids = resolution_graph.nodes[r]['node_indices']
+                rmat = resolution_graph.nodes[r]['matrix']
+                id_new, id_r= jaccard_matrix(new_mat, rmat, self.graph['sim_threshold'])
+                if len(id_new) > 0:
+                    id_new =  newnode[id_new]
+                    id_r = r_node_ids[id_r]
+                    for i in range(len(id_new)):
+                        newedges.append((id_new[i], id_r[i]))
 
         # print('add {:d} new edges'.format(len(newedges)))
-        for ni, i, s in newedges:
-            self.add_edge(ni, i, similarity=s)
+        # for ni, i, s in newedges:
+        self.add_edges_from(newedges)
 
         for nci in range(len(new_clusters)):
             nc = new_clusters[nci]
@@ -87,7 +98,6 @@ class ClusterGraph(nx.Graph): # inherit networkx digraph
                 self.add_node(ni)
             self.nodes[ni]['data'] = nc # is it a pointer?
             # self.nodes[ni]['data'].index = ni
-
 
     def drop_cluster(self, nodes):
         # print('remove {:d} lonely clusters'.format(len(nodes)))
@@ -109,29 +119,44 @@ class ClusterGraph(nx.Graph): # inherit networkx digraph
             if clust.resolution_parameter in newly_padded_resolution:
                 clust.padded = True
 
-def jaccard_matrix(matA, matB, threshold=0.75): # assume matA, matB are sorted
-    length = matA.shape[1]
-    sizeA = np.sum(matA, axis=1)
-    sizeB = np.sum(matB, axis=1)
-    idA, idB = [], []
-    for i in range(sizeA):
-        for j in range(sizeB):
-            if 1.0 * min(sizeA[i], sizeB[j])/max(sizeA[i], sizeB[j]) < threshold:
-                continue
-            else:
-                idA.append(i)
-                idB.append(j)
-    idA = np.array(idA)
-    idB = np.array(idB)
-    both = np.matmul(matA[idA], matB[idB].T)
-    either = length - np.matmul(1-matA[idA], 1-matB[idB].T)
-    jac = 1.0*both/either
-    jactrue = (jac > threshold)
-    return np.where(jactrue)
+def jaccard_matrix(matA, matB, threshold=0.75, prefilter = False): # assume matA, matB are sorted
+    # prefiltered version has bugs and doesn't seem to to
+    if prefilter: # does not have much speed advantage
+        sizeA = np.ravel(np.asarray(np.sum(matA, axis=1)))
+        sizeB = np.ravel(np.asarray(np.sum(matB, axis=1)))
+        idA, idB = [], []
+        for i in range(len(sizeA)):
+            for j in range(len(sizeB)):
+                if 1.0 * min(sizeA[i], sizeB[j])/max(sizeA[i], sizeB[j]) < threshold:
+                    continue
+                else:
+                    idA.append(i)
+                    idB.append(j)
+        if len(idA) > 0:
+            idA = np.array(idA)
+            idB = np.array(idB)
+            # print(idA, idB)
+            matAs, matBs = matA[idA, :], matB[idB, :]
+            both = np.sum(matAs.multiply(matBs), axis=1).ravel()
+            either = matAs.getnnz(axis=1) + matBs.getnnz(axis=1) - both
+            # print(both.shape, matAs.getnnz(axis=1).shape,matBs.getnnz(axis=1).shape, np.min(either))
+            jac = 1.0*both/either
+            small_index = np.where(jac > threshold)
+            # print(small_index)
+            real_index = (idA[small_index[1]], idB[small_index[1]])
+            return real_index
+        else:
+            return ([], [])
+    else:
+        both = matA.dot(matB.T)
+
+        either = (np.tile(matA.getnnz(axis=1), (matB.shape[0],1)) + matB.getnnz(axis=1)[:, np.newaxis]).T -both
+        jac = 1.0*both/either
+        index = np.where(jac > threshold)
+        return index
 
 
-
-def run_alg(G, gamma):
+def run_alg(G, gamma=1.0):
     '''
     run community detection algorithm with resolution parameter. Right now only use RB in Louvain
     :param G: an igraph graph
@@ -149,9 +174,26 @@ def network_perturb(G, sample=0.8):
     G1.delete_edges(edges_to_remove)
     return G1
 
-def update_resolution_graph(G, new_resolution, value, neighborhood_size, neighbor_density_threshold):
+def partition_to_membership_matrix(partition, minsize=4):
+    clusters = sorted([p for p in partition if len(p) >=minsize], key=len, reverse=True)
+    row, col = [], []
+    for i in range(len(clusters)):
+        row.extend([i for _ in clusters[i]])
+        col.extend([x for x in clusters[i]])
+    row = np.array(row)
+    col = np.array(col)
+    data = np.ones_like(row, dtype=int)
+    C = sp.sparse.coo_matrix((data, (row, col)), shape=(len(clusters), partition.n))
+    C = C.tocsr()
+    return C
+
+
+def update_resolution_graph(G, new_resolution, partition, value, neighborhood_size, neighbor_density_threshold):
     nodename = '{:.4f}'.format(new_resolution)
-    G.add_node(nodename, resolution = new_resolution, padded=False, value=value)
+    membership = partition_to_membership_matrix(partition)
+    G.add_node(nodename, resolution = new_resolution,
+               matrix=membership,
+               padded=False, value=value)
     for v, vd in G.nodes(data=True):
         if v == nodename:
             continue
@@ -248,12 +290,12 @@ def run(G,
     print('Upper bound of resolution parameter: {:.4f}'.format(maxres))
     stack_res_range.append((minres, maxres))
 
-    update_resolution_graph(resolution_graph, minres,
+    update_resolution_graph(resolution_graph, minres, minres_partition,
                             minres_partition.total_weight_in_all_comms(), density, neighbors)
-    update_resolution_graph(resolution_graph, maxres,
+    update_resolution_graph(resolution_graph, maxres, maxres_partition,
                             maxres_partition.total_weight_in_all_comms(), density, neighbors)
-    cluG.add_clusters(minres_partition, minres, resolution_graph)
-    cluG.add_clusters(maxres_partition, maxres, resolution_graph)
+    cluG.add_clusters(resolution_graph, minres)
+    cluG.add_clusters(resolution_graph, maxres)
 
     # start = time.time()
     while stack_res_range:
@@ -282,10 +324,10 @@ def run(G,
             new_partition = run_alg(G1, new_resolution)
         else:
             new_partition = run_alg(G, new_resolution)
-        _ = update_resolution_graph(resolution_graph, new_resolution, new_partition.total_weight_in_all_comms(), density, neighbors)
+        _ = update_resolution_graph(resolution_graph, new_resolution, new_partition, new_partition.total_weight_in_all_comms(), density, neighbors)
         # if len(newly_padded_resolution) > 0:
         #     print(newly_padded_resolution)
-        cluG.add_clusters(new_partition, new_resolution, resolution_graph)
+        cluG.add_clusters(resolution_graph, new_resolution)
 
         # print('time elapsed: {:.3f}'.format(time.time() - start))
         # cluG.update_padding(newly_padded_resolution) # think about here. The third parameter needs to be larger than k
