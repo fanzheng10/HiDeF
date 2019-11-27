@@ -313,27 +313,6 @@ class Weaver(object):
 
         top = kwargs.pop('top', 100)
 
-        L = self._partitions
-        n_sets = self.n_partitions
-        n_nodes = self.n_terminals
-
-        rooted = False
-        for l in reversed(L):
-            if all_equal(l):
-                if rooted:
-                    L.remove(l) # TODO: had a problem here (infrequently)
-                else:
-                    rooted = True
-        
-        if not rooted:
-            I = np.ones(n_nodes)
-            L = np.vstack((I, L))
-            n_sets += 1
-            self.clevels = [i+1 for i in self.clevels]
-            self.clevels.insert(0, 0)
-
-        self._partitions = L
-
         # build tree
         T = self._build(**kwargs)
 
@@ -430,15 +409,27 @@ class Weaver(object):
             for a in parents:
                 for b in parents:
                     if neq(a, b):
-                        if (a, b) in G.edges():
+                        if G.has_edge(a, b):
                             # a is a grandparent
                             redundant.append((a, node))
                             break
-                        if (b, a) in G.edges():
+                        if G.has_edge(b, a):
                             # b is a grandparent
                             redundant.append((b, node))
 
         G.remove_edges_from(redundant)
+
+        # add a root node to the graph
+        roots = []
+        for node, indeg in G.in_degree():
+            if indeg == 0:
+                roots.append(node)
+
+        if len(roots) > 1:
+            root = (-1, 0)   # (-1, 0) will be changed to (0, 0) later
+            G.add_node(root, index=-1, label=1)
+            for node in roots:
+                G.add_edge(root, node, weight=1.)
 
         self._full = G
         
@@ -531,9 +522,8 @@ class Weaver(object):
         if G is None:
             raise ValueError('hierarchy not built. Call weave() first')
 
-        for node in G.nodes():
-            ind = G.in_degree(node)
-            if ind == 0:
+        for node, indeg in G.in_degree():
+            if indeg == 0:
                 return node
 
         return None
