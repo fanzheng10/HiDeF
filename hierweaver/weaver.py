@@ -365,14 +365,18 @@ class Weaver(object):
             for a, la in enumerate(LA):
                 if boolean and not boolize(la):
                     continue
+                na = (i, la)
+                if not G.has_node(na):
+                    G.add_node(na)
                 for b, lb in enumerate(LB):
                     if boolean and not boolize(lb): 
                         continue
+                    nb = (j, lb)
+                    if not G.has_node(nb):
+                        G.add_node(nb)
+
                     C = CI[a, b]
                     if C >= cutoff:
-                        na = (i, la)
-                        nb = (j, lb)
-
                         if (na, nb) in G.edges():
                             C0 = G[na][nb]['weight']
                             if C > C0:
@@ -393,7 +397,8 @@ class Weaver(object):
         nodes = [node for node in G.nodes]
 
         for node in nodes:
-            n, l = node
+            n = G.nodes[node]['index']
+            l = G.nodes[node]['label']
             x = X[L[n]==l]
 
             for i in x:
