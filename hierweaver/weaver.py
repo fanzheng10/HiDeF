@@ -367,13 +367,13 @@ class Weaver(object):
                     continue
                 na = (i, la)
                 if not G.has_node(na):
-                    G.add_node(na)
+                    G.add_node(na, index=i, label=la)
                 for b, lb in enumerate(LB):
                     if boolean and not boolize(lb): 
                         continue
                     nb = (j, lb)
                     if not G.has_node(nb):
-                        G.add_node(nb)
+                        G.add_node(nb, index=j, label=lb)
 
                     C = CI[a, b]
                     if C >= cutoff:
