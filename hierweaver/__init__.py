@@ -3,6 +3,10 @@ __release__ = __version__
 
 __all__ = []
 
+from .logger import PackageLogger
+LOGGER = PackageLogger('hierweaver')
+
 from . import weaver
 from .weaver import *
 __all__.extend(weaver.__all__)
+
