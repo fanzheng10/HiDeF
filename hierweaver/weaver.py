@@ -1,7 +1,8 @@
 import numpy as np
 import networkx as nx
-
 from collections import Counter, defaultdict
+
+from hierweaver import LOGGER
 
 __all__ = ['Weaver']
 
@@ -357,6 +358,8 @@ class Weaver(object):
             gen = ((i, j) for i, j in product(rng, rng) if i != j)
     
         # find all potential parents
+        LOGGER.timeit('_init')
+        LOGGER.debug('initializing the graph...')
         G = nx.DiGraph()
         for i, j in gen:
             A = L[i]; B = L[j]
@@ -390,25 +393,13 @@ class Weaver(object):
 
                         G.nodes[na]['index'] = i
                         G.nodes[na]['label'] = la
-
-        # attach graph nodes to nodes in G
-        X = np.arange(n_nodes)
-
-        nodes = [node for node in G.nodes]
-
-        for node in nodes:
-            n = G.nodes[node]['index']
-            l = G.nodes[node]['label']
-            x = X[L[n]==l]
-
-            for i in x:
-                ter = terminals[i]
-                G.add_edge(node, ter, weight=1.)
+        LOGGER.report('graph initialized in %.2fs', '_init')
 
         # remove grandparents (redundant edges)
+        LOGGER.timeit('_redundancy')
+        LOGGER.debug('removing redudant edges...')
         redundant = []
         for node in G.nodes():
-            #parents = [_ for _ in G.predecessors(node)]
             parents = [_ for _ in nx.ancestors(G, node)]
 
             for a in parents:
@@ -421,8 +412,14 @@ class Weaver(object):
                         if G.has_edge(b, a):
                             # b is a grandparent
                             redundant.append((b, node))
+        
+        # for u, v in G.edges():
+        #     nsp = get_n_simple_paths(G, u, v)
+        #     if nsp > 1:
+        #         redundant.append((u, v))
 
         G.remove_edges_from(redundant)
+        LOGGER.report('redundant edges removed in %.2fs', '_redundancy')
 
         # add a root node to the graph
         roots = []
@@ -435,6 +432,40 @@ class Weaver(object):
             G.add_node(root, index=-1, label=1)
             for node in roots:
                 G.add_edge(root, node, weight=1.)
+        else:
+            root = roots[0]
+
+        # attach graph nodes to nodes in G
+        # for efficiency purposes, this is done after redundant edges are 
+        # removed. So we need to make sure we don't introduce new redundancy
+        LOGGER.timeit('_attach')
+        LOGGER.debug('attaching terminal nodes to the graph...')
+        X = np.arange(n_nodes)
+        nodes = [node for node in G.nodes]
+        attached_record = defaultdict(list)
+
+        for node in nodes:
+            n = G.nodes[node]['index']
+            l = G.nodes[node]['label']
+            x = X[L[n]==l]
+
+            for i in x:
+                ter = terminals[i]
+                attached = attached_record[ter]
+                
+                skip = False
+                if attached:
+                    for other in reversed(attached):
+                        if nx.has_path(G, node, other): # other is a descendant of node, skip
+                            skip = True; break
+                        elif nx.has_path(G, other, node): # node is a descendant of other, remove other
+                            attached.remove(other)
+                    
+                if not skip:
+                    G.add_edge(node, ter, weight=1.)
+                    attached.append(node)
+
+        LOGGER.report('terminal nodes attached in %.2fs', '_attach')
 
         self._full = G
         
@@ -884,6 +915,19 @@ def neq(a, b):
     except TypeError:
         return True
     return r
+
+def get_n_simple_paths(G, u, v):
+    queue = [(u, v)]
+    nsp = 0
+    
+    while queue:
+        a, b = queue.pop(0)
+        if a == b:
+            nsp += 1
+        else:
+            for c in G.successors(a):
+                queue.append((c, b))
+    return nsp
 
 def prune(T):
     """Removes the nodes with only one child and the nodes that have no terminal 
