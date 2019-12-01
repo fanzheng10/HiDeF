@@ -1,4 +1,5 @@
 import numpy as np
+import scipy as sp
 import networkx as nx
 from collections import Counter, defaultdict
 
@@ -835,7 +836,7 @@ def containment_indices1(A, B):
             CI[i, j] = float(nb_in_a)/na
     return CI, LA, LB
 
-def containment_indices(A, B):
+def containment_indices_legacy(A, B):
     from collections import defaultdict
 
     n = len(A)
@@ -860,34 +861,47 @@ def containment_indices(A, B):
 
     return CI, LA, LB
 
-def containment_indices_legacy(A, B):
-    if len(A) != len(B):
-        raise ValueError('A and B must have the same length instead ' +\
-                         'of (%d, %d)'%(len(A), len(B)))
+def containment_indices(A, B):
+    from collections import defaultdict
 
-    #A = np.asarray(A)
-    #B = np.asarray(B)
+    A = np.asarray(A)
+    B = np.asarray(B)
 
-    CA = Counter(A)
-    CB = Counter(B)
+    LA = np.unique(A)
+    LB = np.unique(B)
 
-    LA = [a for a in CA]
-    LB = [b for b in CB]
-
-    shape = (len(LA), len(LB))
-    CI = np.zeros(shape)
+    bA = np.zeros((len(LA), len(A)))
     for i, a in enumerate(LA):
-        #BinA = [B[i] for i in range(len(A)) if A[i]==a]
-        BinA = B[A==a]
-        counter = Counter(BinA)
-        for b in counter:
-            j = LB.index(b)
-            CI[i, j] = counter[b] / float(CA[a])
+        bA[i] = A == a
+    
+    bB = np.zeros((len(LB), len(B)))
+    for i, b in enumerate(LB):
+        bB[i] = B == b
 
-    #LA = LA.tolist()
-    #LB = LB.tolist()
+    overlap = bA.dot(bB.T)
+    count = bA.sum(axis=1)
+    CI = overlap / count[:, None]
 
     return CI, LA, LB
+
+def containment_indices_boolean(A, B, sparse=False):
+    '''
+    calculate containment index for all clusters in A in all clusters in B
+    :param A: a numpy matrix, axis 0 - cluster; axis 1 - nodes
+    :param B: a numpy matrix, axis 0 - cluster; axis 1 - nodes
+    :return: a sparse matrix with containment index; calling row/column/data for individual pairs
+    '''
+    if not sparse:
+        Asp = sp.sparse.csr_matrix(A)
+        Bsp = sp.sparse.csr_matrix(B)
+    else:
+        Asp = A
+        Bsp = B
+    both = np.asarray(np.sum(Asp.multiply(Bsp), axis=1)).ravel()
+    countA =  Asp.getnnz(axis=1) # this is dense matrix
+    contain = 1.0 * both/countA
+    # print(both, countA, contain)
+    return contain
 
 def all_equal(iterable):
     "Returns True if all the elements are equal to each other"
