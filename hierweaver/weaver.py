@@ -114,15 +114,15 @@ class Weaver(object):
     partitions = property(get_partitions, set_partitions, 
                           doc='the list of partitions')
 
-    def get_n_partitions(self):
+    def number_of_partitions(self):
         return len(self._partitions)
 
-    n_partitions = property(get_n_partitions, 'the number of partitions')   
+    n_partitions = property(number_of_partitions, 'the number of partitions')   
 
-    def get_n_terminals(self):
+    def number_of_terminals(self):
         return len(self._partitions[0])
 
-    n_terminals = property(get_n_terminals, 'the number of terminal nodes')    
+    n_terminals = property(number_of_terminals, 'the number of terminal nodes')    
 
     def set_terminals(self, value):
         if value is None:
