@@ -145,36 +145,6 @@ class Weaver(object):
     terminals = property(get_terminals, set_terminals, 
                           doc='terminals nodes')
 
-    def node_size(self, node):
-        """Puts dummy nodes into the hierarchy. The dummy nodes are used 
-        in level_cluster() and show() when assume_level is True.
-
-        Parameters
-        ----------
-        node : a node in the hierarchy.
-
-        Returns
-        -------
-        s : the size of the node. If the node is non-terminal, then s will 
-            be the number of terminal nodes that are descendants to it.
-            
-        """
-
-        L = self._partitions
-        T = self._full
-
-        if istuple(node):
-            s = 0
-            n  = T.nodes[node]['index']
-            ln = T.nodes[node]['label']
-            # use iteration for data type compatibility
-            for l in L[n]:
-                if l == ln:
-                    s += 1
-        else:
-            s = 1
-        return s
-
     def relabel(self):
         depth_dict = self.depth()
         mapping = {}
@@ -422,8 +392,7 @@ class Weaver(object):
                             redundant.append((b, node))
         
         # for u, v in G.edges():
-        #     nsp = get_n_simple_paths(G, u, v)
-        #     if nsp > 1:
+        #     if has_multiple_paths(G, u, v):
         #         redundant.append((u, v))
 
         G.remove_edges_from(redundant)
@@ -480,7 +449,7 @@ class Weaver(object):
         self._full = G
         
         # find secondary edges
-        def fast_node_size(node):
+        def node_size(node):
             if istuple(node):
                 i = node[0]
                 return np.count_nonzero(L[i])
@@ -493,7 +462,7 @@ class Weaver(object):
         for node in G.nodes():
             parents = [_ for _ in G.predecessors(node)]
             if len(parents) > 1:
-                nsize = fast_node_size(node)
+                nsize = node_size(node)
                 #weights = [G.edges()[p, node]['weight'] for p in parents]
 
                 # preference if multiple best
@@ -507,7 +476,7 @@ class Weaver(object):
                 pref = []
                 for p in parents:
                     w = G.edges()[p, node]['weight'] 
-                    psize = fast_node_size(p)
+                    psize = node_size(p)
                     usize = w * nsize
                     j = usize / (nsize + psize - usize)
                     pref.append(j)
@@ -945,7 +914,7 @@ def neq(a, b):
         return True
     return r
 
-def get_n_simple_paths(G, u, v):
+def n_simple_paths(G, u, v):
     queue = [(u, v)]
     nsp = 0
     
@@ -957,6 +926,22 @@ def get_n_simple_paths(G, u, v):
             for c in G.successors(a):
                 queue.append((c, b))
     return nsp
+
+def has_multiple_paths(G, u, v):
+    Q = [(u, v)]
+    nsp = 0
+    
+    while Q:
+        a, b = Q.pop(-1)
+        if a == b:
+            nsp += 1
+        else:
+            for c in G.successors(a):
+                Q.append((c, b))
+        
+        if nsp >= 2:
+            return True
+    return False
 
 def prune(T):
     """Removes the nodes with only one child and the nodes that have no terminal 
