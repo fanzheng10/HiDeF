@@ -78,7 +78,7 @@ class Weaver(object):
         self.boolean = boolean
         self._full = None
         self._secondary = None
-        if clevels != None:
+        if clevels is not None:
             self.clevels = clevels
         else:
             self.clevels = [i for i in range(len(partitions))]
@@ -314,16 +314,35 @@ class Weaver(object):
         """
 
         top = kwargs.pop('top', 100)
+        if self.boolean:
+            # convert partitions twice for CI calculation
+            L = np.asarray(self.partitions, dtype=bool)
+            indices = np.arange(len(L))
+            labels = np.ones(len(L), dtype=bool)
+            levels = self.clevels
+        else:
+            L = []; indices = []; labels = []; levels = []
+            for i, p in enumerate(self.partitions):
+                p = np.asarray(p)
+                for label in np.unique(p):
+                    indices.append(i)
+                    labels.append(label)
+                    levels.append(self.clevels[i])
+                    L.append(p == label)
+            L = np.vstack(L)
+            indices = np.array(indices)
+            labels = np.array(labels)
+            levels = np.array(levels)
 
         # build tree
-        T = self._build(**kwargs)
+        T = self._build(L, indices, labels, levels, **kwargs)
 
         # pick parents
         T = self.pick(top)
 
         return T
 
-    def _build(self, **kwargs):
+    def _build(self, L, indices, labels, levels, **kwargs):
         """Finds all the direct parents for the clusters in partitions. This is the first 
         step of weave(). Subclasses can override this function to achieve different results.
 
@@ -341,10 +360,8 @@ class Weaver(object):
         from itertools import product
 
         cutoff = kwargs.pop('cutoff', 0.8)
-        L = self._partitions
 
         assume_levels = self.assume_levels
-        boolean = self.boolean
         
         terminals = self.terminals
         n_nodes = self.n_terminals
@@ -361,39 +378,29 @@ class Weaver(object):
         # find all potential parents
         LOGGER.timeit('_init')
         LOGGER.debug('initializing the graph...')
+        # calculate containment indices
+        CI = containment_indices_boolean(L, L)
         G = nx.DiGraph()
         for i, j in gen:
-            A = L[i]; B = L[j]
-            CI, LA, LB = containment_indices(A, B)
+            C = CI[i, j]
+            na = (i, 0)
+            nb = (j, 0)
 
-            for a, la in enumerate(LA):
-                if boolean and not boolize(la):
-                    continue
-                na = (i, la)
-                if not G.has_node(na):
-                    G.add_node(na, index=i, label=la)
-                for b, lb in enumerate(LB):
-                    if boolean and not boolize(lb): 
-                        continue
-                    nb = (j, lb)
-                    if not G.has_node(nb):
-                        G.add_node(nb, index=j, label=lb)
+            if not G.has_node(na):
+                G.add_node(na, index=indices[i], label=labels[i])
 
-                    C = CI[a, b]
-                    if C >= cutoff:
-                        if (na, nb) in G.edges():
-                            C0 = G[na][nb]['weight']
-                            if C > C0:
-                                G.add_edge(nb, na, weight=C)
-                                G.remove_edge(na, nb)
-                        else:
-                            G.add_edge(nb, na, weight=C)
+            if not G.has_node(nb):
+                G.add_node(nb, index=indices[j], label=labels[j])
 
-                        G.nodes[nb]['index'] = j
-                        G.nodes[nb]['label'] = lb
+            if C >= cutoff:
+                if (na, nb) in G.edges():
+                    C0 = G[na][nb]['weight']
+                    if C > C0:
+                        G.add_edge(nb, na, weight=C)
+                        G.remove_edge(na, nb)
+                else:
+                    G.add_edge(nb, na, weight=C)
 
-                        G.nodes[na]['index'] = i
-                        G.nodes[na]['label'] = la
         LOGGER.report('graph initialized in %.2fs', '_init')
 
         # remove grandparents (redundant edges)
@@ -446,9 +453,11 @@ class Weaver(object):
         attached_record = defaultdict(list)
 
         for node in nodes:
-            n = G.nodes[node]['index']
-            l = G.nodes[node]['label']
-            x = X[L[n]==l]
+            n = node[0]
+            if n == -1:
+                continue
+
+            x = X[L[n]]
 
             for i in x:
                 ter = terminals[i]
@@ -471,11 +480,20 @@ class Weaver(object):
         self._full = G
         
         # find secondary edges
+        def fast_node_size(node):
+            if istuple(node):
+                i = node[0]
+                return np.count_nonzero(L[i])
+            else:
+                return 1
+
+        LOGGER.timeit('_sec')
+        LOGGER.debug('finding secondary edges...')
         secondary = []
         for node in G.nodes():
             parents = [_ for _ in G.predecessors(node)]
             if len(parents) > 1:
-                nsize = self.node_size(node)
+                nsize = fast_node_size(node)
                 #weights = [G.edges()[p, node]['weight'] for p in parents]
 
                 # preference if multiple best
@@ -489,7 +507,7 @@ class Weaver(object):
                 pref = []
                 for p in parents:
                     w = G.edges()[p, node]['weight'] 
-                    psize = self.node_size(p)
+                    psize = fast_node_size(p)
                     usize = w * nsize
                     j = usize / (nsize + psize - usize)
                     pref.append(j)
@@ -502,6 +520,7 @@ class Weaver(object):
         secondary.sort(key=lambda x: x[1], reverse=True)
 
         self._secondary = secondary
+        LOGGER.report('secondary edges found in %.2fs', '_sec')
 
         return G
 
@@ -822,20 +841,6 @@ class Weaver(object):
         with open(filename, 'ab') as f:
             nx.write_edgelist(G, f, delimiter='\t', data=['type'])
 
-def containment_indices1(A, B):
-    LA = np.unique(A)
-    LB = np.unique(B)
-
-    CI = np.zeros((len(LA), len(LB)))
-    for i, a in enumerate(LA):
-        tfa = A == a
-        na = np.sum(tfa)
-        for j, b in enumerate(LB):
-            tfb = B == b
-            nb_in_a = np.sum(np.all([tfa, tfb], axis=0))
-            CI[i, j] = float(nb_in_a)/na
-    return CI, LA, LB
-
 def containment_indices_legacy(A, B):
     from collections import defaultdict
 
@@ -884,7 +889,17 @@ def containment_indices(A, B):
 
     return CI, LA, LB
 
-def containment_indices_boolean(A, B, sparse=False):
+def containment_indices_boolean(A, B):
+    count = np.count_nonzero(A, axis=1)
+
+    A = A.astype(float)
+    B = B.astype(float)
+    overlap = A.dot(B.T)
+    
+    CI = overlap / count[:, None]
+    return CI
+
+def containment_indices_sparse(A, B, sparse=False):
     '''
     calculate containment index for all clusters in A in all clusters in B
     :param A: a numpy matrix, axis 0 - cluster; axis 1 - nodes
