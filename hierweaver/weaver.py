@@ -64,86 +64,49 @@ class Weaver(object):
 
     """
 
-    __slots__ = ['_partitions', '_terminals', 'assume_levels', 'hier', 
-                 '_dhier', '_full', 'boolean', '_secondary', 'clevels']
+    __slots__ = ['_assignment', '_terminals', 'assume_levels', 'hier', '_levels', '_labels',
+                 '_dhier', '_full', '_secondary']
 
-    def __init__(self, partitions, terminals=None, assume_levels=False, 
-                 boolean=False, clevels=None):
-        self.partitions = partitions
-        self.terminals = terminals
-
-        self.assume_levels = assume_levels
-        self.hier = None
-        self._dhier = None
-        self.boolean = boolean
-        self._full = None
-        self._secondary = None
-        if clevels is not None:
-            self.clevels = clevels
-        else:
-            self.clevels = [i for i in range(len(partitions))]
-
-    def set_partitions(self, value):
-        # checkers
-        n_sets = len(value)
-        if n_sets == 0:
-            raise ValueError('partitions cannot be empty')
-        
-        lengths = set([len(l) for l in value])
-        if len(lengths) > 1:
-            raise ValueError('partitions must have the same length')
-        n_nodes = lengths.pop()
-
-        if not isinstance(value, np.ndarray):
-            arr = np.empty((n_sets, n_nodes), dtype=object)
-            for i in range(n_sets):
-                for j in range(n_nodes):
-                    arr[i, j] = value[i][j]
-        else:
-            arr = value
-
-        self._partitions = arr
+    def __init__(self):
         self.hier = None
         self._dhier = None
         self._full = None
         self._secondary = None
-
-    def get_partitions(self):
-        return self._partitions
-
-    partitions = property(get_partitions, set_partitions, 
-                          doc='the list of partitions')
-
-    def number_of_partitions(self):
-        return len(self._partitions)
-
-    n_partitions = property(number_of_partitions, 'the number of partitions')   
+        self._labels = None
+        self._levels = None
+        self.assume_levels = False
+        self._terminals = None
+        self._assignment = None
 
     def number_of_terminals(self):
-        return len(self._partitions[0])
+        if self._assignment is None:
+            return 0
+        return len(self._assignment[0])
 
     n_terminals = property(number_of_terminals, 'the number of terminal nodes')    
 
     def set_terminals(self, value):
         if value is None:
-            terminals = list(range(self.n_terminals))
-        else:
-            terminals = [v for v in value]
+            terminals = np.arange(self.n_terminals)
+        elif not isinstance(value, np.ndarray):
+            terminals = [v for v in value]    # this is to convert list of strings to chararray
         
         if len(terminals) != self.n_terminals:
             raise ValueError('terminal nodes size mismatch: %d instead of %d'
                                 %(len(terminals), self.n_terminals))
 
-        if isinstance(terminals, np.ndarray):
-            terminals = terminals.tolist()
-
-        self._terminals = terminals
+        self._terminals = np.asarray(terminals)
 
     def get_terminals(self):
         return self._terminals
 
     terminals = property(get_terminals, set_terminals, 
                           doc='terminals nodes')
+
+    def get_assignment(self):
+        return self._assignment
+
+    assignment = property(get_assignment, doc='assignment matrix')
 
     def relabel(self):
         depth_dict = self.depth()
@@ -189,14 +152,14 @@ class Weaver(object):
         internal_nodes = [node for node in internals(T) if T.in_degree(node)]
 
         for node in internal_nodes:
-            level = T.nodes[node]['index']
+            level = T.nodes[node]['level']
             i = levels.index(level)
             parents = [_ for _ in T.predecessors(node)]
             for parent in parents:
                 if not istuple(parent):
                     # unlikely to happen
                     continue
-                plevel = T.nodes[parent]['index']
+                plevel = T.nodes[parent]['level']
                 j = levels.index(plevel)
                 n = i - j
                 if n > 1:
@@ -206,7 +169,7 @@ class Weaver(object):
                     for i in range(1, n):
                         d += 1
                         l = levels[j + i]
-                        #labels = [n[1] for n in T.nodes() if istuple(n) if T.nodes[n]['index']==l]
+                        #labels = [n[1] for n in T.nodes() if istuple(n) if T.nodes[n]['level']==l]
                         #d = getSmallestAvailable(labels)
                         
                         curr = (l, d, None)
@@ -216,8 +179,8 @@ class Weaver(object):
                             l0 = levels[j + i - 1]
                             T.add_edge((l0, d-1, None), curr, weight=1)
                         #d0 = d
-                        T.nodes[curr]['index'] = l
-                        T.nodes[curr]['label'] = None
+                        T.nodes[curr]['level'] = l
+                        #T.nodes[curr]['level'] = None
 
                     T.add_edge(curr, node, weight=1)
         
@@ -238,15 +201,15 @@ class Weaver(object):
         else:
             internal_nodes = internals(T)
         for node in internal_nodes: 
-            level = T.nodes[node]['index']
+            level = T.nodes[node]['level']
             if level not in levels:
                 levels.append(level)
 
         levels.sort()
         return levels
 
-    def some_node(self, index):
-        """Returns the first node that is associated with the partition specified by index."""
+    def some_node(self, level):
+        """Returns the first node that is associated with the partition specified by level."""
 
         if self.assume_levels:
             T = self.hier
@@ -254,10 +217,11 @@ class Weaver(object):
             T = self._dhier
 
         for node in internals(T):
-            if T.nodes[node]['index'] == index:
+            if T.nodes[node]['level'] == level:
                 return node
 
-    def weave(self, **kwargs):
+    def weave(self, partitions, terminals=None, assume_levels=False, 
+                 boolean=False, levels=None, **kwargs):
         """Finds a directed acyclic graph that represents a hierarchy recovered from 
         partitions.
 
@@ -284,35 +248,61 @@ class Weaver(object):
         """
 
         top = kwargs.pop('top', 100)
-        if self.boolean:
+
+        ## checkers
+        n_sets = len(partitions)
+        if n_sets == 0:
+            raise ValueError('partitions cannot be empty')
+        
+        lengths = set([len(l) for l in partitions])
+        if len(lengths) > 1:
+            raise ValueError('partitions must have the same length')
+        n_nodes = lengths.pop()
+
+        if not isinstance(partitions, np.ndarray):
+            arr = [[None]*n_nodes for _ in range(n_sets)] # ndarray(object) won't treat '1's correctly
+            for i in range(n_sets):
+                for j in range(n_nodes):
+                    arr[i][j] = partitions[i][j]  # this is to deal with list-of-strings case
+        else:
+            arr = partitions
+        partitions = arr 
+
+        ## initialization
+        clevels = levels if levels is not None else np.arange(n_sets)
+        if len(clevels) != n_sets:
+            raise ValueError('levels/partitions length mismatch: %d/%d'%(len(levels), n_sets))
+
+        if boolean:
             # convert partitions twice for CI calculation
-            L = np.asarray(self.partitions, dtype=bool)
-            indices = np.arange(len(L))
-            labels = np.ones(len(L), dtype=bool)
-            levels = self.clevels
+            self._assignment = np.asarray(partitions).astype(bool)  # asarray(partitions, dtype=bool) won't treat '1's correctly
+            self._labels = np.ones(n_sets, dtype=bool)
+            self._levels = clevels
         else:
             L = []; indices = []; labels = []; levels = []
-            for i, p in enumerate(self.partitions):
+            for i, p in enumerate(partitions):
                 p = np.asarray(p)
                 for label in np.unique(p):
                     indices.append(i)
                     labels.append(label)
-                    levels.append(self.clevels[i])
+                    levels.append(clevels[i])
                     L.append(p == label)
-            L = np.vstack(L)
-            indices = np.array(indices)
-            labels = np.array(labels)
-            levels = np.array(levels)
+            self._assignment = np.vstack(L)
+            self._labels = np.array(labels)
+            self._levels = np.array(levels)
 
-        # build tree
-        T = self._build(L, indices, labels, levels, **kwargs)
+        self.terminals = terminals  # if terminal is None, a default array will be created by the setter
+        self.assume_levels = assume_levels
 
-        # pick parents
+        ## build tree
+        T = self._build(**kwargs)
+
+        ## pick parents
         T = self.pick(top)
 
         return T
 
-    def _build(self, L, indices, labels, levels, **kwargs):
+    def _build(self, **kwargs):
         """Finds all the direct parents for the clusters in partitions. This is the first 
         step of weave(). Subclasses can override this function to achieve different results.
 
@@ -332,16 +322,17 @@ class Weaver(object):
         cutoff = kwargs.pop('cutoff', 0.8)
 
         assume_levels = self.assume_levels
-        
         terminals = self.terminals
         n_nodes = self.n_terminals
+        L = self._assignment
+        labels = self._labels
+        levels = self._levels
 
         n_sets = len(L)
 
         rng = range(n_sets)
         if assume_levels:
-            print(len(rng), len(self.clevels))
-            gen = ((i, j) for i, j in product(rng, rng) if self.clevels[i] > self.clevels[j])
+            gen = ((i, j) for i, j in product(rng, rng) if levels[i] > levels[j])
         else:
             gen = ((i, j) for i, j in product(rng, rng) if i != j)
     
@@ -357,10 +348,10 @@ class Weaver(object):
             nb = (j, 0)
 
             if not G.has_node(na):
-                G.add_node(na, index=indices[i], label=labels[i])
+                G.add_node(na, index=i, level=levels[i], label=labels[i])
 
             if not G.has_node(nb):
-                G.add_node(nb, index=indices[j], label=labels[j])
+                G.add_node(nb, index=j, level=levels[j], label=labels[j])
 
             if C >= cutoff:
                 if (na, nb) in G.edges():
@@ -406,7 +397,7 @@ class Weaver(object):
 
         if len(roots) > 1:
             root = (-1, 0)   # (-1, 0) will be changed to (0, 0) later
-            G.add_node(root, index=-1, label=1)
+            G.add_node(root, index=-1, level=-1, label=1)
             for node in roots:
                 G.add_edge(root, node, weight=1.)
         else:
@@ -439,6 +430,7 @@ class Weaver(object):
                             skip = True; break
                         elif nx.has_path(G, other, node): # node is a descendant of other, remove other
                             attached.remove(other)
+                            G.remove_edge(other, ter)
                     
                 if not skip:
                     G.add_edge(node, ter, weight=1.)
@@ -531,7 +523,7 @@ class Weaver(object):
         # prune tree
         T = prune(G)
 
-        self.hier = T
+        self.hier = self._dhier = T
 
         # update attributes
         self.update_depths()
@@ -607,7 +599,7 @@ class Weaver(object):
 
     maxdepth = property(get_max_depth, 'the maximum depth of nodes to the root')   
 
-    def alldepths(self, leaf=True):
+    def all_depths(self, leaf=True):
         depth_dict = self.depth()
 
         if leaf:
@@ -643,7 +635,7 @@ class Weaver(object):
         
         return show_hierarchy(T, nodelist=nodelist, **kwargs)
 
-    def level_cluster(self, index):
+    def level_cluster(self, level):
         """Recovers the partition that specified by the index based on the 
         hierarchy.
 
@@ -664,8 +656,8 @@ class Weaver(object):
         nodes = self.terminals
         n_nodes = self.n_terminals
 
-        indices = nx.get_node_attributes(T, 'index')
-        ancestors = [node for node in internals(T) if indices[node]==index]
+        levels = nx.get_node_attributes(T, 'level')
+        ancestors = [node for node in internals(T) if levels[node]==level]
                 
         H = np.zeros(n_nodes, dtype=int)
         for i, node in enumerate(ancestors):
@@ -1085,13 +1077,10 @@ def show_hierarchy(T, **kwargs):
     return T2, pos
 
 def weave(partitions, terminals=None, **kwargs):
-    assume_levels = kwargs.pop('assume_levels', False)
-    boolean = kwargs.pop('boolean', False)
+    weaver = Weaver()
+    T = weaver.weave(partitions, terminals, **kwargs)
 
-    weaver = Weaver(partitions, terminals, assume_levels=assume_levels, boolean=boolean)
-    T = weaver.weave(**kwargs)
-
-    return T
+    return weaver
 
 if __name__ == '__main__':
     from pylab import *
@@ -1126,5 +1115,5 @@ if __name__ == '__main__':
 
     nodes = 'ABCDEFGH'
 
-    w = Weaver(P, boolean=True, terminals=nodes, assume_levels=False)
-    T = w.weave(cutoff=0.9, top=10)
+    w = Weaver()
+    T = w.weave(P, boolean=True, terminals=nodes, cutoff=0.9, top=10)
