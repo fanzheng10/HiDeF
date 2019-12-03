@@ -554,17 +554,20 @@ class Weaver(object):
         T = self.hier
 
         def _update_topdown(parent):
-            par_depth = T.nodes[parent]['depth']
+            Q = [parent]
 
-            children = T.successors(parent)
-            for child in children:
-                if 'depth' in T.nodes[child]:  # visited
-                    ch_depth = T.nodes[child]['depth']
-                    if ch_depth <= par_depth + 1:  # already shallower
-                        continue
+            while Q:
+                parent = Q.pop(0)
+                par_depth = T.nodes[parent]['depth']
 
-                T.nodes[child]['depth'] = par_depth + 1
-                _update_topdown(child)
+                for child in T.successors(parent):
+                    if 'depth' in T.nodes[child]:  # visited
+                        ch_depth = T.nodes[child]['depth']
+                        if ch_depth <= par_depth + 1:  # already shallower
+                            continue
+                    
+                    T.nodes[child]['depth'] = par_depth + 1
+                    Q.append(child)
 
         # update depths topdown
         root = self.root
