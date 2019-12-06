@@ -153,14 +153,14 @@ class Weaver(object):
 
         for node in internal_nodes:
             level = T.nodes[node]['level']
-            i = levels.index(level)
+            i = find(levels, level)
             parents = [_ for _ in T.predecessors(node)]
             for parent in parents:
                 if not istuple(parent):
                     # unlikely to happen
                     continue
                 plevel = T.nodes[parent]['level']
-                j = levels.index(plevel)
+                j = find(levels, plevel)
                 n = i - j
                 if n > 1:
                     # add n-1 dummies
@@ -338,7 +338,7 @@ class Weaver(object):
     
         # find all potential parents
         LOGGER.timeit('_init')
-        LOGGER.debug('initializing the graph...')
+        LOGGER.info('initializing the graph...')
         # calculate containment indices
         CI = containment_indices_boolean(L, L)
         G = nx.DiGraph()
@@ -354,40 +354,17 @@ class Weaver(object):
                 G.add_node(nb, index=j, level=levels[j], label=labels[j])
 
             if C >= cutoff:
-                if (na, nb) in G.edges():
+                if G.has_edge(na, nb):
                     C0 = G[na][nb]['weight']
                     if C > C0:
-                        G.add_edge(nb, na, weight=C)
                         G.remove_edge(na, nb)
-                else:
-                    G.add_edge(nb, na, weight=C)
+                    else:
+                        continue
+                
+                #if not nx.has_path(G, nb, na):
+                G.add_edge(nb, na, weight=C)
 
         LOGGER.report('graph initialized in %.2fs', '_init')
-
-        # remove grandparents (redundant edges)
-        LOGGER.timeit('_redundancy')
-        LOGGER.debug('removing redudant edges...')
-        redundant = []
-        for node in G.nodes():
-            parents = [_ for _ in nx.ancestors(G, node)]
-
-            for a in parents:
-                for b in parents:
-                    if neq(a, b):
-                        if G.has_edge(a, b):
-                            # a is a grandparent
-                            redundant.append((a, node))
-                            break
-                        if G.has_edge(b, a):
-                            # b is a grandparent
-                            redundant.append((b, node))
-        
-        # for u, v in G.edges():
-        #     if has_multiple_paths(G, u, v):
-        #         redundant.append((u, v))
-
-        G.remove_edges_from(redundant)
-        LOGGER.report('redundant edges removed in %.2fs', '_redundancy')
 
         # add a root node to the graph
         roots = []
@@ -397,17 +374,44 @@ class Weaver(object):
 
         if len(roots) > 1:
             root = (-1, 0)   # (-1, 0) will be changed to (0, 0) later
-            G.add_node(root, index=-1, level=-1, label=1)
+            G.add_node(root, index=-1, level=-1, label=True)
             for node in roots:
                 G.add_edge(root, node, weight=1.)
         else:
             root = roots[0]
 
+        # remove grandparents (redundant edges)
+        LOGGER.timeit('_redundancy')
+        LOGGER.info('removing redudant edges...')
+        redundant = []
+        # for node in G.nodes():
+        #     parents = [_ for _ in nx.ancestors(G, node)]
+
+        #     for a in parents:
+        #         for b in parents:
+        #             if neq(a, b):
+        #                 if G.has_edge(a, b):
+        #                     # a is a grandparent
+        #                     redundant.append((a, node))
+        #                     break
+        #                 if G.has_edge(b, a):
+        #                     # b is a grandparent
+        #                     redundant.append((b, node))
+        
+        for u, v in G.edges():
+            if has_multiple_paths(G, u, v):
+                redundant.append((u, v))
+
+        #nx.write_edgelist(G, 'sample_granny_network.txt')
+        G.remove_edges_from(redundant)
+        LOGGER.report('redundant edges removed in %.2fs', '_redundancy')
+
+
         # attach graph nodes to nodes in G
         # for efficiency purposes, this is done after redundant edges are 
         # removed. So we need to make sure we don't introduce new redundancy
         LOGGER.timeit('_attach')
-        LOGGER.debug('attaching terminal nodes to the graph...')
+        LOGGER.info('attaching terminal nodes to the graph...')
         X = np.arange(n_nodes)
         nodes = [node for node in G.nodes]
         attached_record = defaultdict(list)
@@ -449,7 +453,7 @@ class Weaver(object):
                 return 1
 
         LOGGER.timeit('_sec')
-        LOGGER.debug('finding secondary edges...')
+        LOGGER.info('finding secondary edges...')
         secondary = []
         for node in G.nodes():
             parents = [_ for _ in G.predecessors(node)]
@@ -667,7 +671,7 @@ class Weaver(object):
             desc = (_ for _ in nx.descendants(T, node) 
                     if not istuple(_))
             for d in desc:
-                j = nodes.index(d)
+                j = find(nodes, d)
 
                 H[j] = i + 1
 
@@ -700,7 +704,7 @@ class Weaver(object):
             desc = (_ for _ in nx.descendants(T, node) 
                     if not istuple(_))
             for d in desc:
-                j = nodes.index(d)
+                j = find(nodes, d)
 
                 if H[j] == 0:
                     H[j] = i + 1
@@ -732,7 +736,52 @@ class Weaver(object):
 
         return H
 
-    def node_cluster(self, node):
+    def depth_cluster1(self, depth):
+        """Recovers the partition at specified depth.
+
+        Returns
+        -------
+        H : a Numpy array of labels for all the terminal nodes.
+            
+        """
+
+        if self.hier is None:
+            raise ValueError('hierarchy not built. Call weave() first')
+
+        T = self.hier
+        n_nodes = self.n_terminals
+
+        depths = self.depth()
+        root = self.root
+
+        # assign labels
+        Q = [root]
+        clusters = []
+
+        while Q:
+            node = Q.pop(0)
+            
+            if not istuple(node):
+                clusters.append(node)
+                continue
+
+            if depths[node] < depth:
+                for child in T.successors(node):
+                    Q.append(child)
+            elif depths[node] == depth:
+                clusters.append(node)
+            else:
+                LOGGER.warn('something went wrong: visiting node with '
+                            'depth greater than %d'%depth)
+
+        H = np.zeros((len(clusters), n_nodes), dtype=bool)
+
+        for i, node in enumerate(clusters):
+            self.node_cluster(node, H[i, :])
+
+        return H
+
+    def node_cluster(self, node, out=None):
         """Recovers the cluster represented by a node in the hierarchy.
 
         Returns
@@ -754,20 +803,22 @@ class Weaver(object):
         nodes = self.terminals
         n_nodes = self.n_terminals
 
-        H = np.zeros(n_nodes, dtype=bool)
+        if out is None:
+            out = np.zeros(n_nodes, dtype=bool)
+        
         desc = [_ for _ in nx.descendants(T, node) 
                 if not istuple(_)]
         
         if len(desc):
             for d in desc:
-                j = nodes.index(d)
+                j = find(nodes, d)
 
-                H[j] = True
+                out[j] = True
         else:
-            j = nodes.index(node)
-            H[j] = True
+            j = find(nodes, node)
+            out[j] = True
 
-        return H
+        return out
 
     def write(self, filename, format='ddot'):
         """Writes the hierarchy to a text file.
@@ -927,17 +978,25 @@ def has_multiple_paths(G, u, v):
     nsp = 0
     
     while Q:
-        a, b = Q.pop(-1)
+        a, b = Q.pop(0)
         if a == b:
             nsp += 1
         else:
-            for c in G.successors(a):
-                Q.append((c, b))
+            if nx.has_path(G, a, b):
+                for c in G.successors(a):
+                    Q.append((c, b))
         
         if nsp >= 2:
             return True
     return False
 
+def find(A, a):
+    if isinstance(A, list):
+        return A.index(a)
+    else:
+        A = np.asarray(A)
+        return np.where(A==a)[0][0]
+    
 def prune(T):
     """Removes the nodes with only one child and the nodes that have no terminal 
     nodes (e.g. genes) as descendants."""
