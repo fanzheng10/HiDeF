@@ -2,6 +2,8 @@ import numpy as np
 import scipy as sp
 import networkx as nx
 from collections import Counter, defaultdict
+from itertools import product as iproduct
+from sys import getrecursionlimit, setrecursionlimit
 
 from hierweaver import LOGGER
 
@@ -10,6 +12,7 @@ __all__ = ['Weaver']
 istuple = lambda n: isinstance(n, tuple)
 isdummy = lambda n: None in n
 internals = lambda T: (node for node in T if istuple(node))
+RECURSION_MAX_DEPTH = int(10e6)
 
 class Weaver(object):
     """
@@ -317,8 +320,6 @@ class Weaver(object):
             
         """
 
-        from itertools import product
-
         cutoff = kwargs.pop('cutoff', 0.8)
 
         assume_levels = self.assume_levels
@@ -332,9 +333,9 @@ class Weaver(object):
 
         rng = range(n_sets)
         if assume_levels:
-            gen = ((i, j) for i, j in product(rng, rng) if levels[i] > levels[j])
+            gen = ((i, j) for i, j in iproduct(rng, rng) if levels[i] > levels[j])
         else:
-            gen = ((i, j) for i, j in product(rng, rng) if i != j)
+            gen = ((i, j) for i, j in iproduct(rng, rng) if i != j)
     
         # find all potential parents
         LOGGER.timeit('_init')
@@ -384,23 +385,27 @@ class Weaver(object):
         LOGGER.timeit('_redundancy')
         LOGGER.info('removing redudant edges...')
         redundant = []
-        # for node in G.nodes():
-        #     parents = [_ for _ in nx.ancestors(G, node)]
 
-        #     for a in parents:
-        #         for b in parents:
-        #             if neq(a, b):
-        #                 if G.has_edge(a, b):
-        #                     # a is a grandparent
-        #                     redundant.append((a, node))
-        #                     break
-        #                 if G.has_edge(b, a):
-        #                     # b is a grandparent
-        #                     redundant.append((b, node))
-        
-        for u, v in G.edges():
-            if has_multiple_paths(G, u, v):
-                redundant.append((u, v))
+        for node in G.nodes():
+            parents = [_ for _ in G.predecessors(node)]
+            ancestors = [_ for _ in nx.ancestors(G, node)]
+
+            for a in parents:
+                for b in ancestors:
+                    if neq(a, b) and G.has_edge(a, b):
+                        # a is a grandparent
+                        redundant.append((a, node))
+                        break
+
+        # rcl = getrecursionlimit()
+        # if rcl < RECURSION_MAX_DEPTH:
+        #     setrecursionlimit(RECURSION_MAX_DEPTH)
+
+        # for u, v in G.edges():
+        #     if n_simple_paths(G, u, v) > 1:
+        #         redundant.append((u, v))
+
+        # setrecursionlimit(rcl)
 
         #nx.write_edgelist(G, 'sample_granny_network.txt')
         G.remove_edges_from(redundant)
@@ -677,66 +682,7 @@ class Weaver(object):
 
         return H
 
-    def depth_cluster(self, depth):
-        """Recovers the partition at specified depth.
-
-        Returns
-        -------
-        H : a Numpy array of labels for all the terminal nodes.
-            
-        """
-
-        if self.hier is None:
-            raise ValueError('hierarchy not built. Call weave() first')
-
-        T = self.hier
-
-        nodes = self.terminals
-        n_nodes = self.n_terminals
-
-        depths = self.depth()
-        internal_nodes = [_ for _ in internals(T)]
-        depth_nodes = [_ for _ in internal_nodes if depths[_]==depth]
-
-        # assign labels
-        H = np.zeros(n_nodes, dtype=int)
-        for i, node in enumerate(depth_nodes):
-            desc = (_ for _ in nx.descendants(T, node) 
-                    if not istuple(_))
-            for d in desc:
-                j = find(nodes, d)
-
-                if H[j] == 0:
-                    H[j] = i + 1
-        
-        # find nodes with unassigned 
-        i += 1
-        sec_depth_nodes = {}
-        for j, h in enumerate(H):
-            if h:
-                continue
-
-            node = nodes[j]
-            
-            # pick a parent with the most depth
-            parents = []
-            par_depths = []
-            for parent in T.predecessors(node):
-                parents.append(parent)
-                par_depths.append(depths[parent])
-
-            p = np.argmax(par_depths)
-            parent = parents[p]
-
-            if parent not in sec_depth_nodes:
-                sec_depth_nodes[parent] = H[j] = i + 1
-                i += 1
-            else:
-                H[j] = sec_depth_nodes[parent]
-
-        return H
-
-    def depth_cluster1(self, depth):
+    def depth_cluster(self, depth, flat=True):
         """Recovers the partition at specified depth.
 
         Returns
@@ -757,10 +703,19 @@ class Weaver(object):
         # assign labels
         Q = [root]
         clusters = []
+        visited = []
 
         while Q:
             node = Q.pop(0)
             
+            if not istuple(node):
+                node = denumpize(node)
+
+            if node in visited:
+                continue
+
+            visited.append(node)
+
             if not istuple(node):
                 clusters.append(node)
                 continue
@@ -779,6 +734,13 @@ class Weaver(object):
         for i, node in enumerate(clusters):
             self.node_cluster(node, H[i, :])
 
+        if flat:
+            I = np.arange(len(clusters)) + 1
+            I = np.atleast_2d(I)
+            H = H * I.T
+            h = H.max(axis=0)
+            return h
+        
         return H
 
     def node_cluster(self, node, out=None):
@@ -961,34 +923,25 @@ def neq(a, b):
     return r
 
 def n_simple_paths(G, u, v):
-    queue = [(u, v)]
-    nsp = 0
-    
-    while queue:
-        a, b = queue.pop(0)
-        if a == b:
-            nsp += 1
-        else:
-            for c in G.successors(a):
-                queue.append((c, b))
-    return nsp
+    nsp_reg = {}
 
-def has_multiple_paths(G, u, v):
-    Q = [(u, v)]
-    nsp = 0
-    
-    while Q:
-        a, b = Q.pop(0)
-        if a == b:
-            nsp += 1
-        else:
-            if nx.has_path(G, a, b):
-                for c in G.successors(a):
-                    Q.append((c, b))
-        
-        if nsp >= 2:
-            return True
-    return False
+    def nsp(u, v):
+        if u == v:
+            return 1
+        if not u in nsp_reg:
+            npaths = 0
+            for c in G.successors(u):
+                npaths += nsp(c, v)
+            nsp_reg[u] = npaths
+
+        return nsp_reg[u]
+
+    return nsp(u, v)
+
+def denumpize(x):
+    if isinstance(x, np.generic):
+        return x.item()
+    return x
 
 def find(A, a):
     if isinstance(A, list):
