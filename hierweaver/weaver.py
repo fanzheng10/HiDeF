@@ -7,7 +7,7 @@ from sys import getrecursionlimit, setrecursionlimit
 
 from hierweaver import LOGGER
 
-__all__ = ['Weaver']
+__all__ = ['Weaver', 'weave']
 
 istuple = lambda n: isinstance(n, tuple)
 isdummy = lambda n: None in n
@@ -68,11 +68,10 @@ class Weaver(object):
     """
 
     __slots__ = ['_assignment', '_terminals', 'assume_levels', 'hier', '_levels', '_labels',
-                 '_dhier', '_full', '_secondary']
+                 '_full', '_secondary']
 
     def __init__(self):
         self.hier = None
-        self._dhier = None
         self._full = None
         self._secondary = None
         self._labels = None
@@ -112,85 +111,25 @@ class Weaver(object):
     assignment = property(get_assignment, doc='assignment matrix')
 
     def relabel(self):
-        depth_dict = self.depth()
         mapping = {}
-        depth_indices = defaultdict(int)
-
-        for node in depth_dict:
+        map_indices = defaultdict(int)
+        if self.assume_levels:
+            map_dict = self.level()
+        else:
+            map_dict = self.depth()
+            
+        for node in map_dict:
             if istuple(node):
-                depth = depth_dict[node]
-                idx = depth_indices[depth]
-                mapping[node] = (depth, idx)
+                value = map_dict[node]
+                idx = map_indices[value]
+                mapping[node] = (value, idx)
 
-                depth_indices[depth] += 1
+                map_indices[value] += 1
 
         self.hier = nx.relabel_nodes(self.hier, mapping, copy=True)
         return mapping
 
-    def stuff_dummies(self):
-        """Puts dummy nodes into the hierarchy. The dummy nodes are used 
-        in level_cluster() and show() when assume_level is True.
-
-        Returns
-        -------
-        T : networkx.DiGraph
-            An hierarchy with dummy nodes added.
-
-        Raises
-        ------
-        ValueError
-            If hierarchy has not been built.
-
-        """
-
-        if self.hier is None:
-            raise ValueError('hierarchy not built. Call weave() first')
-
-        T = self.hier.copy()
-
-        levels = self.get_levels()
-        d = -1
-
-        # make a list of node refs for the iteration during which nodes will change
-        internal_nodes = [node for node in internals(T) if T.in_degree(node)]
-
-        for node in internal_nodes:
-            level = T.nodes[node]['level']
-            i = find(levels, level)
-            parents = [_ for _ in T.predecessors(node)]
-            for parent in parents:
-                if not istuple(parent):
-                    # unlikely to happen
-                    continue
-                plevel = T.nodes[parent]['level']
-                j = find(levels, plevel)
-                n = i - j
-                if n > 1:
-                    # add n-1 dummies
-                    T.remove_edge(parent, node)
-                    #d0 = None
-                    for i in range(1, n):
-                        d += 1
-                        l = levels[j + i]
-                        #labels = [n[1] for n in T.nodes() if istuple(n) if T.nodes[n]['level']==l]
-                        #d = getSmallestAvailable(labels)
-                        
-                        curr = (l, d, None)
-                        if i == 1:
-                            T.add_edge(parent, curr, weight=1)
-                        else:
-                            l0 = levels[j + i - 1]
-                            T.add_edge((l0, d-1, None), curr, weight=1)
-                        #d0 = d
-                        T.nodes[curr]['level'] = l
-                        #T.nodes[curr]['level'] = None
-
-                    T.add_edge(curr, node, weight=1)
-        
-        self._dhier = T
-        return T
-
-    def get_levels(self, ignore_dummies=True):
+    def get_levels(self):
         """Returns the levels (ordered ascendingly) in the hierarchy."""
 
         if self.hier is None:
@@ -199,11 +138,7 @@ class Weaver(object):
         T = self.hier
         levels = []
 
-        if ignore_dummies:
-            internal_nodes = (node for node in internals(T) if not isdummy(node))
-        else:
-            internal_nodes = internals(T)
-        for node in internal_nodes: 
+        for node in internals(T): 
             level = T.nodes[node]['level']
             if level not in levels:
                 levels.append(level)
@@ -214,10 +149,10 @@ class Weaver(object):
     def some_node(self, level):
         """Returns the first node that is associated with the partition specified by level."""
 
-        if self.assume_levels:
-            T = self.hier
-        else:
-            T = self._dhier
+        if self.hier is None:
+            raise ValueError('hierarchy not built. Call weave() first')
+
+        T = self.hier
 
         for node in internals(T):
             if T.nodes[node]['level'] == level:
@@ -532,15 +467,12 @@ class Weaver(object):
         # prune tree
         T = prune(G)
 
-        self.hier = self._dhier = T
+        self.hier = T
 
         # update attributes
         self.update_depths()
 
-        if self.assume_levels:
-            self.stuff_dummies()
-        else:
-            self.relabel()
+        self.relabel()
         return T
 
     def get_root(self):
@@ -583,26 +515,35 @@ class Weaver(object):
         T.nodes[root]['depth'] = 0
         _update_topdown(root)
 
-    def depth(self, node=None):
+    def get_attribute(self, attr, node=None):
         if self.hier is None:
             raise ValueError('hierarchy not built. Call weave() first')
             
         G = self.hier
 
-        # obtain depths
-        depths = nx.get_node_attributes(G, 'depth')
+        # obtain values
+        values = nx.get_node_attributes(G, attr)
 
         # pack results
         if node is None:
-            ret = depths
+            ret = values
         elif istuple(node) or np.isscalar(node):
-            ret = depths.pop(node)
+            ret = values.pop(node)
         else:
             ret = []
             for n in node:
-                ret.append(depths[n])
+                value = values[n] if n in values else None
+                ret.append(value)
 
         return ret
+
+    def depth(self, node=None):
+
+        return self.get_attribute('depth', node)
+
+    def level(self, node=None):
+
+        return self.get_attribute('level', node)
 
     def get_max_depth(self):
         depths = self.depth(self.terminals)
@@ -633,17 +574,16 @@ class Weaver(object):
         nodelist = kwargs.pop('nodelist', None)
         dummy = kwargs.pop('dummy', False)
 
-
         if self.hier is None:
             raise ValueError('hierarchy not built. Call weave() first')
 
-        if self.assume_levels and dummy:
-            T = self._dhier
-        else:
-            T = self.hier
+        T = self.hier
 
         if nodelist is None:
-            nodelist = self.hier.nodes()
+            nodelist = T.nodes()
+
+        if dummy:
+            T = stuff_dummies(T)
         
         return show_hierarchy(T, nodelist=nodelist, **kwargs)
 
@@ -659,12 +599,7 @@ class Weaver(object):
         if self.hier is None:
             raise ValueError('hierarchy not built. Call weave() first')
 
-        if node in self.hier.nodes:
-            T = self.hier
-        elif node in self._dhier.nodes:
-            T = self._dhier
-        else:
-            raise ValueError('node %s not found in hierarchy'%str(node))
+        T = self.hier
 
         nodes = self.terminals
         n_nodes = self.n_terminals
@@ -941,7 +876,7 @@ def find(A, a):
         A = np.asarray(A)
         return np.where(A==a)[0][0]
     
-def prune(T):
+def prune1(T):
     """Removes the nodes with only one child and the nodes that have no terminal 
     nodes (e.g. genes) as descendants."""
 
@@ -974,6 +909,140 @@ def prune(T):
 
             T.remove_node(node)
             T.add_edge(parent, child, weight=w1 + w2)
+    return T
+
+def prune(T):
+    """Removes the nodes with only one child and the nodes that have no terminal 
+    nodes (e.g. genes) as descendants."""
+
+    # prune tree
+    # remove dead-ends
+    internal_nodes = [node for node in T.nodes() if istuple(node)]
+    out_degrees = list(T.out_degree(internal_nodes).values())
+
+    while (0 in out_degrees):
+        for node in reversed(internal_nodes):
+            outdeg = T.out_degree(node)
+            if istuple(node) and outdeg == 0:
+                T.remove_node(node)
+                internal_nodes.remove(node)
+
+        out_degrees = list(T.out_degree(internal_nodes).values())
+
+    # remove single branches
+    all_nodes = [node for node in T.nodes()]
+    for node in all_nodes:
+        indeg = T.in_degree(node)
+        outdeg = T.out_degree(node)
+
+        if indeg == 1 and outdeg == 1:
+            parent = next(T.predecessors(node))
+            child  = next(T.successors(node))
+            
+            w1 = T[parent][node]['weight']
+            w2 = T[node][child]['weight']
+
+            T.remove_node(node)
+            T.add_edge(parent, child, weight=w1 + w2)
+
+    def _single_branch(node):
+        indeg = T.in_degree(node)
+        outdeg = T.out_degree(node)
+
+        if indeg > 1:
+            return False
+        
+        if outdeg > 1:
+            return False
+
+        child  = next(T.successors(node))
+        if istuple(child):
+            return False
+        return True
+
+    Q = [self.root]
+    visited = []
+    while Q:
+        node = Q.pop(0)
+
+        if not istuple(node):
+            continue
+
+        if node in visited:
+            continue
+
+        if _single_branch(node):
+            parent = next(T.predecessors(node))
+            child  = next(T.successors(node))
+            
+            w1 = T[parent][node]['weight']
+            w2 = T[node][child]['weight']
+
+            T.remove_node(node)
+            T.add_edge(parent, child, weight=w1 + w2)
+
+        
+        visited.append(node)
+    return T
+
+def stuff_dummies(hierarchy):
+    """Puts dummy nodes into the hierarchy. The dummy nodes are used 
+    in `show_hierarchy` when `assume_level` is True.
+
+    Returns
+    -------
+    T : networkx.DiGraph
+        An hierarchy with dummy nodes added.
+
+    Raises
+    ------
+    ValueError
+        If hierarchy has not been built.
+
+    """
+
+    T = hierarchy.copy()
+
+    level_dict = nx.get_node_attributes(T, 'level')
+    levels = np.unique(list(level_dict.values()))
+    d = -1
+
+    # make a list of node refs for the iteration during which nodes will change
+    internal_nodes = [node for node in internals(T) if T.in_degree(node)]
+
+    for node in internal_nodes:
+        level = T.nodes[node]['level']
+        i = find(levels, level)
+        parents = [_ for _ in T.predecessors(node)]
+        for parent in parents:
+            if not istuple(parent):
+                # unlikely to happen
+                continue
+            plevel = T.nodes[parent]['level']
+            j = find(levels, plevel)
+            n = i - j
+            if n > 1:
+                # add n-1 dummies
+                T.remove_edge(parent, node)
+                #d0 = None
+                for i in range(1, n):
+                    d += 1
+                    l = levels[j + i]
+                    #labels = [n[1] for n in T.nodes() if istuple(n) if T.nodes[n]['level']==l]
+                    #d = getSmallestAvailable(labels)
+                    
+                    curr = (l, d, None)
+                    if i == 1:
+                        T.add_edge(parent, curr, weight=1)
+                    else:
+                        l0 = levels[j + i - 1]
+                        T.add_edge((l0, d-1, None), curr, weight=1)
+                    #d0 = d
+                    T.nodes[curr]['level'] = l
+                    #T.nodes[curr]['level'] = None
+
+                T.add_edge(curr, node, weight=1)
+    
     return T
 
 def show_hierarchy(T, **kwargs):
@@ -1084,7 +1153,7 @@ def show_hierarchy(T, **kwargs):
 
 def weave(partitions, terminals=None, **kwargs):
     weaver = Weaver()
-    T = weaver.weave(partitions, terminals, **kwargs)
+    weaver.weave(partitions, terminals, **kwargs)
 
     return weaver
 
