@@ -647,102 +647,6 @@ class Weaver(object):
         
         return show_hierarchy(T, nodelist=nodelist, **kwargs)
 
-    def level_cluster(self, level):
-        """Recovers the partition that specified by the index based on the 
-        hierarchy.
-
-        Returns
-        -------
-        H : a Numpy array of labels for all the terminal nodes.
-            
-        """
-
-        if self.hier is None:
-            raise ValueError('hierarchy not built. Call weave() first')
-
-        if self.assume_levels:
-            T = self._dhier
-        else:
-            T = self.hier
-
-        nodes = self.terminals
-        n_nodes = self.n_terminals
-
-        levels = nx.get_node_attributes(T, 'level')
-        ancestors = [node for node in internals(T) if levels[node]==level]
-                
-        H = np.zeros(n_nodes, dtype=int)
-        for i, node in enumerate(ancestors):
-            desc = (_ for _ in nx.descendants(T, node) 
-                    if not istuple(_))
-            for d in desc:
-                j = find(nodes, d)
-
-                H[j] = i + 1
-
-        return H
-
-    def depth_cluster(self, depth, flat=True):
-        """Recovers the partition at specified depth.
-
-        Returns
-        -------
-        H : a Numpy array of labels for all the terminal nodes.
-            
-        """
-
-        if self.hier is None:
-            raise ValueError('hierarchy not built. Call weave() first')
-
-        T = self.hier
-        n_nodes = self.n_terminals
-
-        depths = self.depth()
-        root = self.root
-
-        # assign labels
-        Q = [root]
-        clusters = []
-        visited = []
-
-        while Q:
-            node = Q.pop(0)
-            
-            if not istuple(node):
-                node = denumpize(node)
-
-            if node in visited:
-                continue
-
-            visited.append(node)
-
-            if not istuple(node):
-                clusters.append(node)
-                continue
-
-            if depths[node] < depth:
-                for child in T.successors(node):
-                    Q.append(child)
-            elif depths[node] == depth:
-                clusters.append(node)
-            else:
-                LOGGER.warn('something went wrong: visiting node with '
-                            'depth greater than %d'%depth)
-
-        H = np.zeros((len(clusters), n_nodes), dtype=bool)
-
-        for i, node in enumerate(clusters):
-            self.node_cluster(node, H[i, :])
-
-        if flat:
-            I = np.arange(len(clusters)) + 1
-            I = np.atleast_2d(I)
-            H = H * I.T
-            h = H.max(axis=0)
-            return h
-        
-        return H
-
     def node_cluster(self, node, out=None):
         """Recovers the cluster represented by a node in the hierarchy.
 
@@ -781,6 +685,93 @@ class Weaver(object):
             out[j] = True
 
         return out
+
+    def _topdown_cluster(self, attr, value, flat=True):
+        """Recovers the partition at specified depth.
+
+        Returns
+        -------
+        H : a Numpy array of labels for all the terminal nodes.
+            
+        """
+
+        if self.hier is None:
+            raise ValueError('hierarchy not built. Call weave() first')
+
+        T = self.hier
+        n_nodes = self.n_terminals
+
+        attrs = nx.get_node_attributes(T, attr)
+        root = self.root
+
+        # assign labels
+        Q = [root]
+        clusters = []
+        visited = []
+
+        while Q:
+            node = Q.pop(0)
+            
+            if not istuple(node):
+                node = denumpize(node)
+
+            if node in visited:
+                continue
+
+            visited.append(node)
+
+            if not istuple(node):
+                clusters.append(node)
+                continue
+
+            if attrs[node] < value:
+                for child in T.successors(node):
+                    Q.append(child)
+            elif attrs[node] == value:
+                clusters.append(node)
+            else:
+                LOGGER.warn('something went wrong: visiting node with '
+                            '%s greater than %d'%(attr, value))
+
+        H = np.zeros((len(clusters), n_nodes), dtype=bool)
+
+        for i, node in enumerate(clusters):
+            self.node_cluster(node, H[i, :])
+
+        if flat:
+            I = np.arange(len(clusters)) + 1
+            I = np.atleast_2d(I)
+            H = H * I.T
+            h = H.max(axis=0)
+            return h
+        
+        return H
+
+    def depth_cluster(self, depth, flat=True):
+        """Recovers the partition at specified depth.
+
+        Returns
+        -------
+        H : a Numpy array of labels for all the terminal nodes.
+            
+        """
+        
+        return self._topdown_cluster('depth', depth, flat)
+
+    def level_cluster(self, level, flat=True):
+        """Recovers the partition that specified by the index based on the 
+        hierarchy.
+
+        Returns
+        -------
+        H : a Numpy array of labels for all the terminal nodes.
+            
+        """
+
+        if not self.assume_levels:
+            LOGGER.warn('Levels were not followed when building the hierarchy.')
+
+        return self._topdown_cluster('level', level, flat)
 
     def write(self, filename, format='ddot'):
         """Writes the hierarchy to a text file.
