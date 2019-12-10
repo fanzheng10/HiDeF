@@ -233,7 +233,7 @@ class Weaver(object):
         self.assume_levels = assume_levels
 
         ## build tree
-        T = self._build(**kwargs)
+        self._build(**kwargs)
 
         ## pick parents
         T = self.pick(top)
@@ -251,7 +251,7 @@ class Weaver(object):
 
         Returns
         -------
-        T : networkx.DiGraph
+        G : networkx.DiGraph
             
         """
 
@@ -444,7 +444,7 @@ class Weaver(object):
 
         Returns
         -------
-        T : networkx.DiGraph
+        networkx.DiGraph
             
         """
 
@@ -465,15 +465,13 @@ class Weaver(object):
             G.remove_edges_from(removed_edges)
 
         # prune tree
-        T = prune(G)
-
-        self.hier = T
+        self.hier = prune(G)
 
         # update attributes
         self.update_depths()
-
         self.relabel()
-        return T
+        
+        return self.hier
 
     def get_root(self):
         G = self.hier
@@ -911,8 +909,9 @@ def prune(T):
             return False
         return True
 
-    all_nodes = [node for node in traverse_topdown(T)]
     #all_nodes = [node for node in T.nodes()]
+    all_nodes = [node for node in traverse_topdown(T)]
+
     for node in all_nodes:
         if _single_branch(node):
             parent = next(T.predecessors(node))
