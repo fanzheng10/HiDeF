@@ -364,7 +364,7 @@ class Weaver(object):
             x = X[L[n]]
 
             for i in x:
-                ter = terminals[i]
+                ter = denumpize(terminals[i])
                 attached = attached_record[ter]
                 
                 skip = False
@@ -480,11 +480,7 @@ class Weaver(object):
         if G is None:
             raise ValueError('hierarchy not built. Call weave() first')
 
-        for node, indeg in G.in_degree():
-            if indeg == 0:
-                return node
-
-        return None
+        return get_root(G)
 
     root = property(get_root, 'the root node')   
     
@@ -642,18 +638,15 @@ class Weaver(object):
         # assign labels
         Q = [root]
         clusters = []
-        visited = []
+        visited = defaultdict(bool)
 
         while Q:
             node = Q.pop(0)
-            
-            if not istuple(node):
-                node = denumpize(node)
 
-            if node in visited:
+            if visited[node]:
                 continue
 
-            visited.append(node)
+            visited[node] = True
 
             if not istuple(node):
                 clusters.append(node)
@@ -875,8 +868,15 @@ def find(A, a):
     else:
         A = np.asarray(A)
         return np.where(A==a)[0][0]
-    
-def prune1(T):
+
+def get_root(T):
+    for node, indeg in T.in_degree():
+        if indeg == 0:
+            return node
+
+    return None
+
+def prune(T):
     """Removes the nodes with only one child and the nodes that have no terminal 
     nodes (e.g. genes) as descendants."""
 
@@ -895,82 +895,25 @@ def prune1(T):
         out_degrees = [val for key, val in T.out_degree(internal_nodes)]
 
     # remove single branches
-    all_nodes = [node for node in T.nodes()]
-    for node in all_nodes:
-        indeg = T.in_degree(node)
-        outdeg = T.out_degree(node)
-
-        if indeg == 1 and outdeg == 1:
-            parent = next(T.predecessors(node))
-            child  = next(T.successors(node))
-            
-            w1 = T[parent][node]['weight']
-            w2 = T[node][child]['weight']
-
-            T.remove_node(node)
-            T.add_edge(parent, child, weight=w1 + w2)
-    return T
-
-def prune(T):
-    """Removes the nodes with only one child and the nodes that have no terminal 
-    nodes (e.g. genes) as descendants."""
-
-    # prune tree
-    # remove dead-ends
-    internal_nodes = [node for node in T.nodes() if istuple(node)]
-    out_degrees = list(T.out_degree(internal_nodes).values())
-
-    while (0 in out_degrees):
-        for node in reversed(internal_nodes):
-            outdeg = T.out_degree(node)
-            if istuple(node) and outdeg == 0:
-                T.remove_node(node)
-                internal_nodes.remove(node)
-
-        out_degrees = list(T.out_degree(internal_nodes).values())
-
-    # remove single branches
-    all_nodes = [node for node in T.nodes()]
-    for node in all_nodes:
-        indeg = T.in_degree(node)
-        outdeg = T.out_degree(node)
-
-        if indeg == 1 and outdeg == 1:
-            parent = next(T.predecessors(node))
-            child  = next(T.successors(node))
-            
-            w1 = T[parent][node]['weight']
-            w2 = T[node][child]['weight']
-
-            T.remove_node(node)
-            T.add_edge(parent, child, weight=w1 + w2)
-
     def _single_branch(node):
         indeg = T.in_degree(node)
         outdeg = T.out_degree(node)
 
-        if indeg > 1:
+        if indeg > 1 or indeg == 0:
             return False
         
-        if outdeg > 1:
+        if outdeg > 1 or outdeg == 0:
             return False
 
-        child  = next(T.successors(node))
-        if istuple(child):
+        # if attached to a terminal node, not considered as a single branch 
+        child = next(T.successors(node))
+        if not istuple(child):
             return False
         return True
 
-    Q = [self.root]
-    visited = []
-    while Q:
-        node = Q.pop(0)
-
-        if not istuple(node):
-            continue
-
-        if node in visited:
-            continue
-
+    all_nodes = [node for node in traverse_topdown(T)]
+    #all_nodes = [node for node in T.nodes()]
+    for node in all_nodes:
         if _single_branch(node):
             parent = next(T.predecessors(node))
             child  = next(T.successors(node))
@@ -981,9 +924,30 @@ def prune(T):
             T.remove_node(node)
             T.add_edge(parent, child, weight=w1 + w2)
 
-        
-        visited.append(node)
     return T
+
+def traverse_topdown(T, mode='breadth'):
+    if mode == 'depth':
+        q = -1
+    elif mode == 'breadth':
+        q = 0
+    else:
+        raise ValueError('mode must be either "depth" or "breadth"')
+
+    root = get_root(T)
+    Q = [root]
+    visited = defaultdict(bool)
+    while Q:
+        node = Q.pop(q)
+
+        if visited[node]:
+            continue
+        
+        visited[node] = True
+
+        for child in T.successors(node):
+            Q.append(child)
+        yield node
 
 def stuff_dummies(hierarchy):
     """Puts dummy nodes into the hierarchy. The dummy nodes are used 
