@@ -19,31 +19,6 @@ class Weaver(object):
     Class for constructing a hierarchical representation of a graph 
     based on (a list of) input partitions. 
 
-    Parameters
-    ----------
-    partitions : positional argument 
-        a list of different partitions of the graph. Each item in the 
-        list should be an array (Numpy array or list) of partition labels 
-        for the nodes. A root partition (where all nodes belong to one 
-        cluster) and a terminal partition (where all nodes belong to 
-        their own cluster) will automatically added later.
-
-    terminals : keyword argument, optional (default=None)
-        a list of names for the graph nodes. If none is provided, an 
-        integer will be assigned to each node.
-
-    assume_levels : keyword argument, optional (default=False)
-        whether assume the partitions are provided in some order. If set 
-        to True, the algorithm will only find the parents for a node from 
-        upper levels. The levels are assumed to be arranged in an ascending 
-        order, e.g. partitions[0] is the highest level and partitions[-1] 
-        the lowest.
-
-    boolean : keyword argument, optional (default=False)
-        whether the partition labels should be considered as boolean. If 
-        set to True, only the clusters labelled as True will be considered 
-        as a parent in the hierarchy.
-
     Examples
     --------
     Define a list of partitions P:
@@ -158,13 +133,35 @@ class Weaver(object):
             if T.nodes[node]['level'] == level:
                 return node
 
-    def weave(self, partitions, terminals=None, assume_levels=False, 
-                 boolean=False, levels=None, **kwargs):
+    def weave(self, partitions, terminals=None, boolean=False, levels=False, **kwargs):
         """Finds a directed acyclic graph that represents a hierarchy recovered from 
         partitions.
 
         Parameters
         ----------
+        partitions : positional argument 
+            a list of different partitions of the graph. Each item in the 
+            list should be an array (Numpy array or list) of partition labels 
+            for the nodes. A root partition (where all nodes belong to one 
+            cluster) and a terminal partition (where all nodes belong to 
+            their own cluster) will automatically added later.
+
+        terminals : keyword argument, optional (default=None)
+            a list of names for the graph nodes. If none is provided, an 
+            integer will be assigned to each node.
+
+        levels : keyword argument, optional (default=False)
+            whether assume the partitions are provided in some order. If set 
+            to True, the algorithm will only find the parents for a node from 
+            upper levels. The levels are assumed to be arranged in an ascending 
+            order, e.g. partitions[0] is the highest level and partitions[-1] 
+            the lowest.
+
+        boolean : keyword argument, optional (default=False)
+            whether the partition labels should be considered as boolean. If 
+            set to True, only the clusters labelled as True will be considered 
+            as a parent in the hierarchy.
+
         top : keyword argument (0 ~ 100, default=100)
             top x percent (alternative) edges to be kept in the hierarchy. This parameter 
             controls the number of parents each node has based on a global ranking of the 
@@ -207,6 +204,11 @@ class Weaver(object):
         partitions = arr 
 
         ## initialization
+        if isinstance(levels, bool):
+            self.assume_levels = levels
+            levels = None
+        else:
+            self.assume_levels = True
         clevels = levels if levels is not None else np.arange(n_sets)
         if len(clevels) != n_sets:
             raise ValueError('levels/partitions length mismatch: %d/%d'%(len(levels), n_sets))
@@ -230,7 +232,6 @@ class Weaver(object):
             self._levels = np.array(levels)
 
         self.terminals = terminals  # if terminal is None, a default array will be created by the setter
-        self.assume_levels = assume_levels
 
         ## build tree
         self._build(**kwargs)
