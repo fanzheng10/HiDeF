@@ -469,7 +469,7 @@ class Weaver(object):
         self.hier = prune(G)
 
         # update attributes
-        self.update_depths()
+        self.update_depth()
         self.relabel()
         
         return self.hier
@@ -483,7 +483,7 @@ class Weaver(object):
 
     root = property(get_root, 'the root node')   
     
-    def update_depths(self):
+    def update_depth(self):
         if self.hier is None:
             raise ValueError('hierarchy not built. Call weave() first')
 
@@ -509,6 +509,33 @@ class Weaver(object):
         root = self.root
         T.nodes[root]['depth'] = 0
         _update_topdown(root)
+
+    def update_depthr(self):
+        if self.hier is None:
+            raise ValueError('hierarchy not built. Call weave() first')
+
+        T = self.hier
+
+        def _update_bottomup(children):
+            Q = [child for child in children]
+
+            while Q:
+                child = Q.pop(0)
+                ch_depthr = T.nodes[child]['depthr']
+
+                for parent in T.predecessors(child):
+                    if 'depthr' in T.nodes[parent]:  # visited
+                        par_depthr = T.nodes[parent]['depthr']
+                        if par_depthr >= ch_depthr - 1:  # already shallower
+                            continue
+                    
+                    T.nodes[parent]['depthr'] = ch_depthr - 1
+                    Q.append(parent)
+
+        # update depths topdown
+        for ter in self.terminals:
+            T.nodes[ter]['depthr'] = 0
+        _update_bottomup(self.terminals)
 
     def get_attribute(self, attr, node=None):
         if self.hier is None:
@@ -616,7 +643,17 @@ class Weaver(object):
 
         return out
 
-    def _topdown_cluster(self, attr, value, flat=True):
+    def has_any_terminal(self, node):
+        if self.hier is None:
+            raise ValueError('hierarchy not built. Call weave() first')
+
+        T = self.hier
+        for child in T.successors(node):
+            if not istuple(child):
+                return True
+        return False
+
+    def _topdown_cluster(self, attr, value, **kwargs):
         """Recovers the partition at specified depth.
 
         Returns
@@ -624,6 +661,9 @@ class Weaver(object):
         H : a Numpy array of labels for all the terminal nodes.
             
         """
+
+        flat = kwargs.pop('flat', True) 
+        stop_before_terminal = kwargs.pop('stop_before_terminal', True)
 
         if self.hier is None:
             raise ValueError('hierarchy not built. Call weave() first')
@@ -648,11 +688,16 @@ class Weaver(object):
             visited[node] = True
 
             if not istuple(node):
-                clusters.append(node)
+                if not stop_before_terminal:
+                    clusters.append(node)
                 continue
 
             if attrs[node] < value:
+                if stop_before_terminal and self.has_any_terminal(node):
+                         clusters.append(node)
                 for child in T.successors(node):
+                    if stop_before_terminal and not istuple(child):
+                        continue
                     Q.append(child)
             elif attrs[node] == value:
                 clusters.append(node)
@@ -674,7 +719,7 @@ class Weaver(object):
         
         return H
 
-    def depth_cluster(self, depth, flat=True):
+    def depth_cluster(self, depth, **kwargs):
         """Recovers the partition at specified depth.
 
         Returns
@@ -683,9 +728,9 @@ class Weaver(object):
             
         """
         
-        return self._topdown_cluster('depth', depth, flat)
+        return self._topdown_cluster('depth', depth, **kwargs)
 
-    def level_cluster(self, level, flat=True):
+    def level_cluster(self, level, **kwargs):
         """Recovers the partition that specified by the index based on the 
         hierarchy.
 
@@ -698,7 +743,7 @@ class Weaver(object):
         if not self.assume_levels:
             LOGGER.warn('Levels were not followed when building the hierarchy.')
 
-        return self._topdown_cluster('level', level, flat)
+        return self._topdown_cluster('level', level, **kwargs)
 
     def write(self, filename, format='ddot'):
         """Writes the hierarchy to a text file.
