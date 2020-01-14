@@ -237,7 +237,7 @@ class Weaver(object):
         self._build(**kwargs)
 
         ## pick parents
-        T = self.pick(top)
+        T = self.pick(top, **kwargs)
 
         return T
 
@@ -430,7 +430,7 @@ class Weaver(object):
 
         return G
 
-    def pick(self, top):
+    def pick(self, top, **kwargs):
         """Picks top x percent edges. Alternative edges are ranked based on the number of 
         overlap terminal nodes between the child and the parent. This is the second 
         step of weave(). Subclasses can override this function to achieve different results.
@@ -466,7 +466,7 @@ class Weaver(object):
             G.remove_edges_from(removed_edges)
 
         # prune tree
-        self.hier = prune(G)
+        self.hier = prune(G, **kwargs)
 
         # update attributes
         self.update_depth()
@@ -920,7 +920,7 @@ def get_root(T):
 
     return None
 
-def prune(T):
+def prune(T, strict_single_branch=False):
     """Removes the nodes with only one child and the nodes that have no terminal 
     nodes (e.g. genes) as descendants."""
 
@@ -941,18 +941,25 @@ def prune(T):
     # remove single branches
     def _single_branch(node):
         indeg = T.in_degree(node)
-        outdeg = T.out_degree(node)
 
-        if indeg > 1 or indeg == 0:
-            return False
-        
-        if outdeg > 1 or outdeg == 0:
+        if indeg != 1:
             return False
 
-        # if attached to a terminal node, not considered as a single branch 
-        child = next(T.successors(node))
-        if not istuple(child):
+        if strict_single_branch:
+            outdeg = T.out_degree(node)
+            if outdeg == 1:
+                child = next(T.successors(node))
+                if not istuple(child):
+                    outdeg = 0
+        else: # is a single branch if there is only one internal outedge
+            outdeg = 0
+            for child in T.successors(node):
+                if istuple(child):
+                    outdeg += 1
+
+        if outdeg != 1:
             return False
+
         return True
 
     #all_nodes = [node for node in T.nodes()]
@@ -961,13 +968,15 @@ def prune(T):
     for node in all_nodes:
         if _single_branch(node):
             parent = next(T.predecessors(node))
-            child  = next(T.successors(node))
+            children = [child for child in T.successors(node)]
             
             w1 = T[parent][node]['weight']
-            w2 = T[node][child]['weight']
+            
+            for child in children:
+                w2 = T[node][child]['weight']
+                T.add_edge(parent, child, weight=w1 + w2)
 
             T.remove_node(node)
-            T.add_edge(parent, child, weight=w1 + w2)
 
     return T
 
