@@ -920,10 +920,11 @@ def get_root(T):
 
     return None
 
-def prune(T, strict_single_branch=False):
+def prune(T, **kwargs):
     """Removes the nodes with only one child and the nodes that have no terminal 
     nodes (e.g. genes) as descendants."""
 
+    strict_single_branch = kwargs.pop('strict_single_branch', False)
     # prune tree
     # remove dead-ends
     internal_nodes = [node for node in T.nodes() if istuple(node)]
