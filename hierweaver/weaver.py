@@ -417,7 +417,9 @@ class Weaver(object):
                                                 key=lambda x: x[1], reverse=True)]
                     secondary_edges.extend(ranked_edges[1:])
                 else:
-                    for p in parents:
+                    for i, p in enumerate(parents):
+                        if i == 0:
+                            continue
                         secondary_terminal_edges.append([(p, node)])
 
         secondary_edges.sort(key=lambda x: x[1], reverse=True)
@@ -450,17 +452,26 @@ class Weaver(object):
         if self._secondary_edges is None:
             raise ValueError('hierarchy not built. Call weave() first')
 
+        if self._secondary_terminal_edges is None:
+            raise ValueError('hierarchy not built. Call weave() first')
+
         G = self._full.copy()
 
         #W = [x[1] for x in self._secondary]
         secondary = [x[0] for x in self._secondary_edges]
+        sectereg = [y[0] for y in self._secondary_terminal_edges]
 
         if top == 0:
             # special treatment for one-parent case for better performance
             G.remove_edges_from(secondary)
+            G.remove_edges_from(sectereg)
         elif top < 100:
             n = int(len(secondary) * top/100.)
             removed_edges = secondary[n:]
+            G.remove_edges_from(removed_edges)
+
+            m = int(len(sectereg) * top/100.)
+            removed_edges = sectereg[m:]
             G.remove_edges_from(removed_edges)
 
         # prune tree
