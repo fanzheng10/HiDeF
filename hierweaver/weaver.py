@@ -43,12 +43,13 @@ class Weaver(object):
     """
 
     __slots__ = ['_assignment', '_terminals', 'assume_levels', 'hier', '_levels', '_labels',
-                 '_full', '_secondary']
+                 '_full', '_secondary_edges', '_secondary_terminal_edges']
 
     def __init__(self):
         self.hier = None
         self._full = None
-        self._secondary = None
+        self._secondary_edges = None
+        self._secondary_terminal_edges = None
         self._labels = None
         self._levels = None
         self.assume_levels = False
@@ -395,37 +396,34 @@ class Weaver(object):
 
         LOGGER.timeit('_sec')
         LOGGER.info('finding secondary edges...')
-        secondary = []
+        secondary_edges = []
+        secondary_terminal_edges = []
+        
         for node in G.nodes():
             parents = [_ for _ in G.predecessors(node)]
             if len(parents) > 1:
                 nsize = node_size(node)
-                #weights = [G.edges()[p, node]['weight'] for p in parents]
+                if istuple(node):
+                    pref = []
+                    for p in parents:
+                        w = G.edges()[p, node]['weight'] 
+                        psize = node_size(p)
+                        usize = w * nsize
+                        j = usize / (nsize + psize - usize)
+                        pref.append(j)
 
-                # preference if multiple best
-                # if self.assume_levels:
-                #     pref = [G.nodes[p]['index'] for p in parents]
-                # else:
-                #     pref = []
-                #     for p in parents:
-                #         nsize = -self.node_size(p) # use negative size to sort in ascending order when reversed
-                #         pref.append(nsize)
-                pref = []
-                for p in parents:
-                    w = G.edges()[p, node]['weight'] 
-                    psize = node_size(p)
-                    usize = w * nsize
-                    j = usize / (nsize + psize - usize)
-                    pref.append(j)
+                    # weight (CI) * node_size gives the size of the union between the node and the parent
+                    ranked_edges = [((x[0], node), x[1]) for x in sorted(zip(parents, pref), 
+                                                key=lambda x: x[1], reverse=True)]
+                    secondary_edges.extend(ranked_edges[1:])
+                else:
+                    for p in parents:
+                        secondary_terminal_edges.append([(p, node)])
 
-                # weight (CI) * node_size gives the size of the union between the node and the parent
-                ranked_edges = [((x[0], node), x[1]) for x in sorted(zip(parents, pref), 
-                                            key=lambda x: x[1], reverse=True)]
-                secondary.extend(ranked_edges[1:])
+        secondary_edges.sort(key=lambda x: x[1], reverse=True)
 
-        secondary.sort(key=lambda x: x[1], reverse=True)
-
-        self._secondary = secondary
+        self._secondary_edges = secondary_edges
+        self._secondary_terminal_edges = secondary_terminal_edges
         LOGGER.report('secondary edges found in %.2fs', '_sec')
 
         return G
@@ -449,13 +447,13 @@ class Weaver(object):
             
         """
 
-        if self._secondary is None:
+        if self._secondary_edges is None:
             raise ValueError('hierarchy not built. Call weave() first')
 
         G = self._full.copy()
 
         #W = [x[1] for x in self._secondary]
-        secondary = [x[0] for x in self._secondary]
+        secondary = [x[0] for x in self._secondary_edges]
 
         if top == 0:
             # special treatment for one-parent case for better performance
