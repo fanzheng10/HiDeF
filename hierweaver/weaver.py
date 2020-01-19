@@ -417,10 +417,13 @@ class Weaver(object):
                                                 key=lambda x: x[1], reverse=True)]
                     secondary_edges.extend(ranked_edges[1:])
                 else:
+                    edges = []
                     for i, p in enumerate(parents):
-                        if i == 0:
-                            continue
-                        secondary_terminal_edges.append([(p, node)])
+                        psize = node_size(p)
+                        edges.append(((p, node), psize))
+
+                    edges = sorted(edges, key=lambda x: x[1], reverse=False)
+                    secondary_terminal_edges.extend(edges[1:])
 
         secondary_edges.sort(key=lambda x: x[1], reverse=True)
 
@@ -430,18 +433,23 @@ class Weaver(object):
 
         return G
 
-    def pick(self, top, **kwargs):
+    def pick(self, percentage_edges, percentage_terminal_edges=0, **kwargs):
         """Picks top x percent edges. Alternative edges are ranked based on the number of 
         overlap terminal nodes between the child and the parent. This is the second 
         step of weave(). Subclasses can override this function to achieve different results.
 
         Parameters
         ----------
-        top : keyword argument (0 ~ 100, default=100)
-            top x percent (alternative) edges to be kept in the hierarchy. This parameter 
+        percentage_edges : positional argument (0 ~ 100)
+            top x percent (alternative) non-terminal edges to be kept in the hierarchy. This parameter 
             controls the number of parents each node has based on a global ranking of the 
             edges. Note that if top=0 then each node will only have exactly one parent 
             (except for the root which has none). 
+        
+        percentage_terminal_edges : keyword argument (0 ~ 100)
+            top x percent (alternative) terminal edges to be kept in the hierarchy. This parameter 
+            controls the number of parents each node has based on a global ranking of the 
+            edges. Note that if top=0 then each node will only have exactly one parent. 
 
         Returns
         -------
@@ -454,32 +462,51 @@ class Weaver(object):
 
         if self._secondary_terminal_edges is None:
             raise ValueError('hierarchy not built. Call weave() first')
+            
+        add_edges = kwargs.pop('additional', None)
+        replace = kwargs.pop('replace', False)
 
-        G = self._full.copy()
+        G = self._full
+        T = self._full.copy()
 
         #W = [x[1] for x in self._secondary]
         secondary = [x[0] for x in self._secondary_edges]
         sectereg = [y[0] for y in self._secondary_terminal_edges]
 
-        if top == 0:
+        if percentage_edges == 0:
             # special treatment for one-parent case for better performance
-            G.remove_edges_from(secondary)
-            G.remove_edges_from(sectereg)
-        elif top < 100:
-            n = int(len(secondary) * top/100.)
+            T.remove_edges_from(secondary)
+        elif percentage_edges < 100:
+            n = int(len(secondary) * percentage_edges/100.)
             removed_edges = secondary[n:]
-            G.remove_edges_from(removed_edges)
-
-            m = int(len(sectereg) * top/100.)
+            T.remove_edges_from(removed_edges)
+        
+        if percentage_terminal_edges == 0:
+            # special treatment for one-parent case for better performance
+            T.remove_edges_from(sectereg)
+        elif percentage_terminal_edges < 100:
+            m = int(len(sectereg) * percentage_terminal_edges/100.)
             removed_edges = sectereg[m:]
-            G.remove_edges_from(removed_edges)
+            T.remove_edges_from(removed_edges)
+
+        if add_edges is not None:
+            for u, v in add_edges:
+                if not G.has_edge(u, v):
+                    raise ValueError('edge does not exist: (%s, %s)'%(u, v))
+                
+                if replace:
+                    edges_to_be_removed = []
+                    for w in T.predecessors(v):
+                        edges_to_be_removed.append((w, v))
+                    T.remove_edges_from(edges_to_be_removed)
+                T.add_edge(u, v, weight=1.)
 
         # prune tree
-        self.hier = prune(G, **kwargs)
+        self.hier = prune(T, **kwargs)
 
         # update attributes
         self.update_depth()
-        self.relabel()
+        #self.relabel()
         
         return self.hier
 
