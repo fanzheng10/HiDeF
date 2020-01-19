@@ -958,8 +958,12 @@ def prune(T, **kwargs):
                 if istuple(child):
                     outdeg += 1
 
-        if outdeg != 1:
+        if outdeg > 1:
             return False
+        elif outdeg == 0:
+            indeg = T.in_degree(node)
+            if indeg != 1:
+                return False
 
         return True
 
