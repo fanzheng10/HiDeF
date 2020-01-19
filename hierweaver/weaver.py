@@ -961,8 +961,8 @@ def prune(T, **kwargs):
         if outdeg > 1:
             return False
         elif outdeg == 0:
-            indeg = T.in_degree(node)
-            if indeg != 1:
+            outdeg = T.out_degree(node)
+            if outdeg != 1:
                 return False
 
         return True
