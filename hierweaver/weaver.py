@@ -418,7 +418,7 @@ class Weaver(object):
                     secondary_edges.extend(ranked_edges[1:])
                 else:
                     edges = []
-                    for i, p in enumerate(parents):
+                    for p in parents:
                         psize = node_size(p)
                         edges.append(((p, node), psize))
 
