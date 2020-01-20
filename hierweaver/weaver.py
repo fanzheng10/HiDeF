@@ -1121,6 +1121,7 @@ def show_hierarchy(T, **kwargs):
     edgescale = kwargs.pop('edge_scale', None)
     edgelabel = kwargs.pop('edge_label', False)
     interactive = kwargs.pop('interactive', True)
+    excluded_nodes = kwargs.pop('excluded_nodes', [])
 
     isWindows = osname == 'nt'
 
@@ -1128,16 +1129,16 @@ def show_hierarchy(T, **kwargs):
         style += '.exe'
 
     if not leaf:
-        T2 = T.subgraph(n for n in T.nodes() if istuple(n))
+        T2 = T.subgraph(n for n in T.nodes() if istuple(n) and n not in excluded_nodes)
         if 'nodelist' in kwargs:
             nodes = kwargs.pop('nodelist')
             nonleaves = []
             for node in nodes:
-                if istuple(node):
+                if istuple(node) and node not in excluded_nodes:
                     nonleaves.append(node)
             kwargs['nodelist'] = nonleaves
     else:
-        T2 = T
+        T2 = T.subgraph(n for n in T.nodes() if n not in excluded_nodes)
     
     pos = graphviz_layout(T2, prog=style)
 
