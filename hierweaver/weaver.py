@@ -419,13 +419,15 @@ class Weaver(object):
                 else:
                     edges = []
                     for p in parents:
-                        psize = node_size(p)
-                        edges.append(((p, node), psize))
+                        #psize = node_size(p)
+                        n_steps = nx.shortest_path_length(G, root, p)
+                        edges.append(((p, node), n_steps))
 
-                    edges = sorted(edges, key=lambda x: x[1], reverse=False)
+                    edges = sorted(edges, key=lambda x: x[1], reverse=True)
                     secondary_terminal_edges.extend(edges[1:])
 
         secondary_edges.sort(key=lambda x: x[1], reverse=True)
+        secondary_terminal_edges.sort(key=lambda x: x[1], reverse=True)
 
         self._secondary_edges = secondary_edges
         self._secondary_terminal_edges = secondary_terminal_edges
