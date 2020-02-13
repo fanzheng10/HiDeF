@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import scipy as sp
 from networkx.algorithms.community import k_clique_communities
-from hierweaver import weaver, LOGGER
+from hidef import weaver, LOGGER
 
 class Cluster(object):
     __slots__ = ['size',
