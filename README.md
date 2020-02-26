@@ -9,6 +9,8 @@ Corresponding to a paper submitted to ISMB 2020:
 "Robust and flexible decoding of multiscale structures in complex network data", S Zhang*, F Zheng*, I Bahar, T Ideker.
 (\* equal contribution) 
 
+There are two main components of the scripts: `finder.py` and `weaver.py`
+
 Detailed documentations are coming.
 
 ## Dependencies (with tested versions)
@@ -28,7 +30,7 @@ pandas
 
 ## Inputs
 
-`$graph`: a tab delimited file with 2-3 columns: [nodeA, nodeB, weight]  
+`$graph`: a tab delimited file with 2-3 columns: nodeA, nodeB, weight (optional)  
 `$n`: the upper limit of the sampled range of the resolution parameter 
 
 ## Outputs
