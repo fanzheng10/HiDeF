@@ -1,4 +1,4 @@
-# HiDef (Hierarchical community Decoding Framework)
+# HiDeF (Hierarchical community Decoding Framework)
 
 
 ## Introduction
