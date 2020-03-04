@@ -87,6 +87,8 @@ class Weaver(object):
     assignment = property(get_assignment, doc='assignment matrix')
 
     def relabel(self):
+        """Changes the labels of the nodes to the depths."""
+
         mapping = {}
         map_indices = defaultdict(int)
         if self.assume_levels:
