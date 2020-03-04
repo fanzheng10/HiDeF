@@ -26,7 +26,7 @@ pandas
 
 ## Usage
 
-# Hierarchical view
+### Hierarchical view
 The following example shows how to obtain a hierarchical view of given data points using HiDeF. 
 
 First, the user needs to provide the clustering results on these data points. These results may be obtained from any multilevel clustering algorithm of user's choice. In this example, suppose we have 8 data points and define 7 ways of partitioning them (in a Python terminal), 
@@ -56,7 +56,7 @@ Then the hierarchical view can be obtained by
 
 The hierarchy is represented by a `networkx.DiGraph` object, which can be obtained by querying `T.hier`. `T` also contains a lot of useful functions for extracting useful information about the hierarchy. 
 
-# Optimal resolution
+### Optimal resolution
 To identify the optimal Louvain modularity of a graph, simply run the following command in a terminal: 
 
 `python finder.py --g $graph --n $n [--options]`
