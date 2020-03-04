@@ -5,7 +5,7 @@ from collections import Counter, defaultdict
 from itertools import product as iproduct
 from sys import getrecursionlimit, setrecursionlimit
 
-from hierweaver import LOGGER
+from hidef import LOGGER
 
 __all__ = ['Weaver', 'weave']
 
