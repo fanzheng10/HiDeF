@@ -1,6 +1,6 @@
 """A package for building a hierarchy based on multiple partitions on graph nodes.
 See:
-https://github.com/SHZ66/HierWeaver
+https://https://github.com/HierLab/HiDeF
 """
 
 from setuptools import setup, find_packages
@@ -19,7 +19,7 @@ setup(
     long_description=long_description,  
 
     long_description_content_type='text/markdown',  
-    url='https://github.com/SHZ66/HierWeaver',  
+    url='https://https://github.com/HierLab/HiDeF',  
     author='She Zhang',  
     author_email='shz66@pitt.edu',  
 
@@ -48,7 +48,7 @@ setup(
     install_requires=['numpy', 'networkx'], 
 
     project_urls={ 
-        'Bug Reports': 'https://github.com/SHZ66/HierWeaver/issues',
-        'Source': 'https://github.com/SHZ66/HierWeaver',
+        'Bug Reports': 'https://https://github.com/HierLab/HiDeF/issues',
+        'Source': 'https://https://github.com/HierLab/HiDeF',
     },
 )
