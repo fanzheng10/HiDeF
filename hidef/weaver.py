@@ -87,6 +87,8 @@ class Weaver(object):
     assignment = property(get_assignment, doc='assignment matrix')
 
     def relabel(self):
+        """Changes the labels of the nodes to the depths."""
+
         mapping = {}
         map_indices = defaultdict(int)
         if self.assume_levels:
@@ -445,13 +447,12 @@ class Weaver(object):
         percentage_edges : positional argument (0 ~ 100)
             top x percent (alternative) non-terminal edges to be kept in the hierarchy. This parameter 
             controls the number of parents each node has based on a global ranking of the 
-            edges. Note that if top=0 then each node will only have exactly one parent 
+            edges. Note that if set to 0 then each node will only have exactly one parent 
             (except for the root which has none). 
         
         percentage_terminal_edges : keyword argument (0 ~ 100)
-            top x percent (alternative) terminal edges to be kept in the hierarchy. This parameter 
-            controls the number of parents each node has based on a global ranking of the 
-            edges. Note that if top=0 then each node will only have exactly one parent. 
+            similar to ``percentage_edges`` but for top x percent (alternative) **terminal** edges 
+            to be kept in the hierarchy. 
 
         Returns
         -------

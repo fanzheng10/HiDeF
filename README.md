@@ -26,17 +26,42 @@ pandas
 
 ## Usage
 
+# Hierarchical view
+The following example shows how to obtain a hierarchical view of given data points using HiDeF. 
+
+First, the user needs to provide the clustering results on these data points. These results may be obtained from any multilevel clustering algorithm of user's choice. In this example, suppose we have 8 data points and define 7 ways of partitioning them (in a Python terminal), 
+
+```
+>>> P = ['11111111',
+...      '11111100',
+...      '00001111',
+...      '11100000',
+...      '00110000',
+...      '00001100',
+...      '00000011']
+```
+
+The labels of these nodes are assigned as follows (optional):
+
+```
+>>> nodes = 'ABCDEFGH'
+```
+
+Then the hierarchical view can be obtained by
+
+```
+>>> weaver = Weaver(P, boolean=True, terminals=nodes, assume_levels=False)
+>>> T = weaver.weave(cutoff=0.9, top=10)
+```
+
+The hierarchy is represented by a `networkx.DiGraph` object, which can be obtained by querying `T.hier`. `T` also contains a lot of useful functions for extracting useful information about the hierarchy. 
+
+# Optimal resolution
+To identify the optimal Louvain modularity of a graph, simply run the following command in a terminal: 
+
 `python finder.py --g $graph --n $n [--options]`
 
-## Inputs
+`$graph`: a tab delimited file with 2-3 columns: nodeA, nodeB, weight (optional).
 
-`$graph`: a tab delimited file with 2-3 columns: nodeA, nodeB, weight (optional)  
-`$n`: the upper limit of the sampled range of the resolution parameter 
-
-## Outputs
-
-
-
-
-
+`$n`: the upper limit of the sampled range of the resolution parameter.
 
