@@ -59,7 +59,7 @@ The hierarchy is represented by a `networkx.DiGraph` object, which can be obtain
 
 ### Pan-resolution community detection of a network
 
-To sweep the resolution profile and generate optimized hierarchy based on pan-resolution community persistence, run the following command in a terminal: 
+To sweep the resolution profile and generate an optimized hierarchy based on pan-resolution community persistence, run the following command in a terminal: 
 
 `python finder.py --g $graph --n $n --o $out [--options]`
 
