@@ -72,6 +72,6 @@ To sweep the resolution profile and generate optimized hierarchy based on pan-re
 Other auxiliary parameters are explained in the supplemental material of the manuscript (to be provided soon).
 
 #### Outputs
-`$out.nodes`: A file describing the content (nodes in the input network) of each community
-`$out.edges`: A file describing the parent-child relationships of communities in the hierarchy. The parent communities are in the 1st column and the children communities are in the 2nd column.
+`$out.nodes`: A file describing the content (nodes in the input network) of each community.  
+`$out.edges`: A file describing the parent-child relationships of communities in the hierarchy. The parent communities are in the 1st column and the children communities are in the 2nd column.  
 `$out.gml`: A file in the GML format that can be opened in Cytoscape.
