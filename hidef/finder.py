@@ -5,12 +5,16 @@ import leidenalg
 
 import networkx as nx
 import igraph as ig
-import argparse, time, pickle
+import argparse
+import time
+import pickle
 import numpy as np
 import pandas as pd
 import scipy as sp
 from networkx.algorithms.community import k_clique_communities
-from hidef import weaver, LOGGER
+from hidef import weaver
+from hidef import LOGGER
+
 
 class Cluster(object):
     __slots__ = ['size',
