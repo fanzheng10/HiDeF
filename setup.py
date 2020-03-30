@@ -40,6 +40,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
+    scripts=['hidef/hidef_finder.py'],
     keywords='hierarchy tree DAG',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']), 
 
