@@ -553,6 +553,9 @@ if __name__ == '__main__':
     par.add_argument('--ct', default=75, type=int, help='threshold in collapsing cluster')
     par.add_argument('--o', required=True, help='output file in ddot format')
     par.add_argument('--alg', default='louvain', choices=['louvain', 'leiden'], help='add the option to use leiden algorithm')
+    par.add_argument('--skipclug', action='store_true', help='If set, skips output of cluG file')
+    par.add_argument('--skipgml', action='store_true', help='If set, skips output of gml file')
+
     args = par.parse_args()
 
     G = ig.Graph.Read_Ncol(args.g) # redundant
@@ -572,10 +575,11 @@ if __name__ == '__main__':
                )
     # # use weaver to organize them (due to the previous collapsed step, need to re-calculate containment index. This may be ok
     # components = sorted(nx.connected_components(cluG), key=len, reverse=True)
-    filename = args.o + '.cluG'
-    outfile = open(filename, 'wb')
-    pickle.dump(cluG, outfile)
-    outfile.close()
+    if args.skipclug is False:
+        filename = args.o + '.cluG'
+        outfile = open(filename, 'wb')
+        pickle.dump(cluG, outfile)
+        outfile.close()
 
     LOGGER.timeit('_consensus')
     cluG_collapsed_w_len = consensus(cluG, args.k, 1.0, args.ct) # have sorted by cluster size inside this function
@@ -591,6 +595,7 @@ if __name__ == '__main__':
 
     output_nodes(weaver, G, args.o, len_component)
     output_edges(weaver, G, args.o)
-    output_gml(args.o) # TODO: add stability to the output network
+    if args.skipgml is False:
+        output_gml(args.o) # TODO: add stability to the output network
 
 
