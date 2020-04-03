@@ -536,17 +536,17 @@ def output_gml(out):
 
 if __name__ == '__main__':
     par = argparse.ArgumentParser()
-    par.add_argument('--g', required=True, help='a tab separated file for the input graph')
-    par.add_argument('--n', type=int, help= 'explore the maximum resolution parameter until cluster number is close enough to this value. Increase this number to get more smaller clusters')
-    par.add_argument('--t', type=float, default=0.1, help='(inversed) density of sampling the resolution parameter; decrease this number to introduce more transient clusters (with longer running time);')
-    par.add_argument('--k', type=int, default = 5, help='a parameter to pre-filter instable clusters')
-    par.add_argument('--j', type=float, default=0.75, help='a jaccard index cutoff')
-    par.add_argument('--minres', type=float, default=0.001, help='minimum resolution parameter')
-    par.add_argument('--maxres', type=float, default=100.0, help='maximum resolution parameter')
-    par.add_argument('--s', type=float, default=1.0, help='a subsample parameter')
-    par.add_argument('--ct', default=75, type=int, help='threshold in collapsing cluster')
+    par.add_argument('--g', required=True, help='A tab separated file for the input graph')
+    par.add_argument('--minres', type=float, default=0.001, help='Minimum resolution parameter') # not-expose
+    par.add_argument('--maxres', type=float, default=50.0, help='Maximum resolution parameter. Increase to get more smaller communities.') # Maximum resolution parameter
+    par.add_argument('--n', type=int, help= 'Target community number. Explore the maximum resolution parameter until the number of generated communities at this resolution is close enough to this value. Increase to get more smaller communities.') # Target community number
+    par.add_argument('--t', type=float, default=0.1, help='Sampling density. Inversed density of sampling the resolution parameter. Decrease to introduce more transient communities (will increase running time)') # cdaps not-expose
+    par.add_argument('--j', type=float, default=0.75, help='Similarity/containment threshold. A cutoff for creating the community ensemble graph and the containment graph') # cdaps not-expose
+    par.add_argument('--k', type=int, default = 5, help='Persistence threshold. Increase to delete unstable clusters, and get fewer communities') # Persistent threshold.
+    par.add_argument('--s', type=float, default=1.0, help='A subsample parameter') # cdaps not-expose
+    par.add_argument('--ct', default=75, type=int, help='Consensus threshold. Threshold of collapsing community graph and choose genes for each community.') # Consensus threshold.
     par.add_argument('--o', required=True, help='output file in ddot format')
-    par.add_argument('--alg', default='louvain', choices=['louvain', 'leiden'], help='add the option to use leiden algorithm')
+    par.add_argument('--alg', default='louvain', choices=['louvain', 'leiden'], help='Choose to use Louvain or the newer Leiden algorithm. Must be "louvain" or "leiden".')
     args = par.parse_args()
 
     G = ig.Graph.Read_Ncol(args.g) # redundant
