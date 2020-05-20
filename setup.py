@@ -1,6 +1,6 @@
 """A package for building a hierarchy based on multiple partitions on graph nodes.
 See:
-https://https://github.com/HierLab/HiDeF
+https://github.com/HierLab/HiDeF
 """
 
 from setuptools import setup, find_packages
@@ -13,13 +13,13 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='hierweaver',  
+    name='hidef',
     version='1.0.0', 
     description='A package for building a hierarchy based on multiple partitions on graph nodes.', 
     long_description=long_description,  
 
     long_description_content_type='text/markdown',  
-    url='https://https://github.com/HierLab/HiDeF',  
+    url='https://github.com/HierLab/HiDeF',
     author='She Zhang',  
     author_email='shz66@pitt.edu',  
 
@@ -40,15 +40,19 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
-
+    scripts=['hidef/hidef_finder.py'],
     keywords='hierarchy tree DAG',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']), 
 
     python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, <4',
-    install_requires=['numpy', 'networkx'], 
+    install_requires=['numpy',
+                      'networkx',
+                      'scipy',
+                      'pandas',
+                      'leidenalg'],
 
     project_urls={ 
-        'Bug Reports': 'https://https://github.com/HierLab/HiDeF/issues',
-        'Source': 'https://https://github.com/HierLab/HiDeF',
+        'Bug Reports': 'https://github.com/HierLab/HiDeF/issues',
+        'Source': 'https://github.com/HierLab/HiDeF',
     },
 )
