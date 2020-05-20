@@ -2,6 +2,7 @@ import numpy as np
 import scipy as sp
 import networkx as nx
 from collections import Counter, defaultdict
+import itertools
 from itertools import product as iproduct
 from sys import getrecursionlimit, setrecursionlimit
 
@@ -19,37 +20,15 @@ class Weaver(object):
     Class for constructing a hierarchical representation of a graph 
     based on (a list of) input partitions. 
 
-    Examples
-    --------
-    Define a list of partitions P:
-
-    >>> P = ['11111111',
-    ...      '11111100',
-    ...      '00001111',
-    ...      '11100000',
-    ...      '00110000',
-    ...      '00001100',
-    ...      '00000011']
-
-    Define terminal node labels:
-
-    >>> nodes = 'ABCDEFGH'
-
-    Construct a hierarchy based on P:
-
-    >>> weaver = Weaver(P, boolean=True, terminals=nodes, assume_levels=False)
-    >>> T = weaver.weave(cutoff=0.9, top=10)
-
     """
 
     __slots__ = ['_assignment', '_terminals', 'assume_levels', 'hier', '_levels', '_labels',
-                 '_full', '_secondary_edges', '_secondary_terminal_edges']
+                 '_full', '_secondary']
 
     def __init__(self):
         self.hier = None
         self._full = None
-        self._secondary_edges = None
-        self._secondary_terminal_edges = None
+        self._secondary = None
         self._labels = None
         self._levels = None
         self.assume_levels = False
@@ -87,8 +66,6 @@ class Weaver(object):
     assignment = property(get_assignment, doc='assignment matrix')
 
     def relabel(self):
-        """Changes the labels of the nodes to the depths."""
-
         mapping = {}
         map_indices = defaultdict(int)
         if self.assume_levels:
@@ -164,7 +141,11 @@ class Weaver(object):
             whether the partition labels should be considered as boolean. If 
             set to True, only the clusters labelled as True will be considered 
             as a parent in the hierarchy.
-
+        
+        merge: keyword argument, optional (default=False)
+            whether merge similar clusters. if one cluster is contained in another cluster (determined by "cutoff" oarameter) and vice versa, these two clusters deemed to be very similar. if set to true, such clusters groups will be merged into one (take union)
+        
+        
         top : keyword argument (0 ~ 100, default=100)
             top x percent (alternative) edges to be kept in the hierarchy. This parameter 
             controls the number of parents each node has based on a global ranking of the 
@@ -191,7 +172,7 @@ class Weaver(object):
         n_sets = len(partitions)
         if n_sets == 0:
             raise ValueError('partitions cannot be empty')
-        
+
         lengths = set([len(l) for l in partitions])
         if len(lengths) > 1:
             raise ValueError('partitions must have the same length')
@@ -221,6 +202,7 @@ class Weaver(object):
             self._assignment = np.asarray(partitions).astype(bool)  # asarray(partitions, dtype=bool) won't treat '1's correctly
             self._labels = np.ones(n_sets, dtype=bool)
             self._levels = clevels
+            #TODO: maybe use levels information to store resolution in finder, so comparison in weaver step can be shortened
         else:
             L = []; indices = []; labels = []; levels = []
             for i, p in enumerate(partitions):
@@ -240,7 +222,7 @@ class Weaver(object):
         self._build(**kwargs)
 
         ## pick parents
-        T = self.pick(top, **kwargs)
+        T = self.pick(top)
 
         return T
 
@@ -260,6 +242,7 @@ class Weaver(object):
         """
 
         cutoff = kwargs.pop('cutoff', 0.8)
+        merge = kwargs.pop('merge', False)
 
         assume_levels = self.assume_levels
         terminals = self.terminals
@@ -293,18 +276,78 @@ class Weaver(object):
             if not G.has_node(nb):
                 G.add_node(nb, index=j, level=levels[j], label=labels[j])
 
+            # TODO: hope to collapse bi-directional edges
             if C >= cutoff:
-                if G.has_edge(na, nb):
-                    C0 = G[na][nb]['weight']
-                    if C > C0:
-                        G.remove_edge(na, nb)
-                    else:
-                        continue
-                
-                #if not nx.has_path(G, nb, na):
+                if not merge:
+                    if G.has_edge(na, nb):
+                        C0 = G[na][nb]['weight']
+                        if C > C0:
+                            G.remove_edge(na, nb)
+                        else:
+                            continue
                 G.add_edge(nb, na, weight=C)
 
         LOGGER.report('graph initialized in %.2fs', '_init')
+
+        # remove loops
+        if merge:
+
+            def _collapse_nodes(G, vs):
+                all_in_nodes, all_out_nodes = [], []
+                vs = list(vs)
+                vs = sorted(vs, key = lambda x:G.nodes[x]['index'])
+                for v in vs:
+                    all_in_nodes.extend([w for w in G.predecessors(v)])
+                    all_out_nodes.extend([w for w in G.successors(v)])
+                all_in_nodes = list(set(all_in_nodes).difference(vs))
+                all_out_nodes = list(set(all_out_nodes).difference(vs))
+                dict_in_weights = {u:0 for u in all_in_nodes}
+                dict_out_weights = {u:0 for u in all_out_nodes}
+                for v in vs:
+                    for w in G.predecessors(v):
+                        if not w in all_in_nodes:
+                            continue
+                        if G[w][v]['weight'] > dict_in_weights[w]:
+                            dict_in_weights[w] = G[w][v]['weight']
+                for v in vs:
+                    for w in G.successors(v):
+                        if not w in all_out_nodes:
+                            continue
+                        if G[v][w]['weight'] > dict_out_weights[w]:
+                            dict_out_weights[w] = G[v][w]['weight']
+
+                G.remove_nodes_from(vs[1:])
+
+                for u in all_in_nodes:
+                    if not G.has_predecessor(vs[0], u):
+                        G.add_edge(u, vs[0], weight=dict_in_weights[u])
+                for u in all_out_nodes:
+                    if not G.has_successor(vs[0], u):
+                        G.add_edge(vs[0], u, weight=dict_out_weights[u])
+
+                return G
+
+            LOGGER.timeit('_cluster_redundancy')
+            LOGGER.info('"merge" parameter set to true, so merging redundant clusters...')
+
+            cycles = []
+            try:
+                cycles = list(nx.simple_cycles(G))
+            except:
+                LOGGER.info('No cycle has been found ...')
+            if len(cycles) > 0:
+                Gcyc = nx.Graph()
+                for i in range(len(cycles)):
+                    for v, w in itertools.combinations(cycles[i], 2):
+                        Gcyc.add_edge(v, w)
+                components = list(nx.connected_components(Gcyc))
+                for vs in components:
+                    G = _collapse_nodes(G, vs, )
+                try:
+                    cycles = list(nx.simple_cycles(G))
+                except:
+                    LOGGER.info('No more cycle has been found ...')
+            LOGGER.report('redundant nodes removed in %.2fs', '_cluster_redundancy')
 
         # add a root node to the graph
         roots = []
@@ -312,8 +355,9 @@ class Weaver(object):
             if indeg == 0:
                 roots.append(node)
 
+        # TODO: right now needs a cluster full of 1, otherwise report an error; figure out why and fix it
         if len(roots) > 1:
-            root = (-1, 0)   # (-1, 0) will be changed to (0, 0) later
+            root = (-1, 0)  # (-1, 0) will be changed to (0, 0) later
             G.add_node(root, index=-1, level=-1, label=True)
             for node in roots:
                 G.add_edge(root, node, weight=1.)
@@ -354,6 +398,7 @@ class Weaver(object):
         # attach graph nodes to nodes in G
         # for efficiency purposes, this is done after redundant edges are 
         # removed. So we need to make sure we don't introduce new redundancy
+        # TODO: this is still taking much time in certain cases this can be skipped
         LOGGER.timeit('_attach')
         LOGGER.info('attaching terminal nodes to the graph...')
         X = np.arange(n_nodes)
@@ -386,6 +431,14 @@ class Weaver(object):
 
         LOGGER.report('terminal nodes attached in %.2fs', '_attach')
 
+        in_degrees = np.array([deg for (_, deg) in G.in_degree()])
+        if np.where(in_degrees==0)[0] > 1:
+            G.add_node('root') # add root
+            # print('root added')
+            for node in G.nodes():
+                if G.in_degree(node)== 0:
+                    G.add_edge('root', node)
+
         self._full = G
         
         # find secondary edges
@@ -398,61 +451,53 @@ class Weaver(object):
 
         LOGGER.timeit('_sec')
         LOGGER.info('finding secondary edges...')
-        secondary_edges = []
-        secondary_terminal_edges = []
-        
+        secondary = []
         for node in G.nodes():
             parents = [_ for _ in G.predecessors(node)]
             if len(parents) > 1:
                 nsize = node_size(node)
-                if istuple(node):
-                    pref = []
-                    for p in parents:
-                        w = G.edges()[p, node]['weight'] 
-                        psize = node_size(p)
-                        usize = w * nsize
-                        j = usize / (nsize + psize - usize)
-                        pref.append(j)
+                #weights = [G.edges()[p, node]['weight'] for p in parents]
 
-                    # weight (CI) * node_size gives the size of the union between the node and the parent
-                    ranked_edges = [((x[0], node), x[1]) for x in sorted(zip(parents, pref), 
-                                                key=lambda x: x[1], reverse=True)]
-                    secondary_edges.extend(ranked_edges[1:])
-                else:
-                    edges = []
-                    for p in parents:
-                        #psize = node_size(p)
-                        n_steps = nx.shortest_path_length(G, root, p)
-                        edges.append(((p, node), n_steps))
+                # preference if multiple best
+                # if self.assume_levels:
+                #     pref = [G.nodes[p]['index'] for p in parents]
+                # else:
+                #     pref = []
+                #     for p in parents:
+                #         nsize = -self.node_size(p) # use negative size to sort in ascending order when reversed
+                #         pref.append(nsize)
+                pref = []
+                for p in parents:
+                    w = G.edges()[p, node]['weight'] 
+                    psize = node_size(p)
+                    usize = w * nsize
+                    j = usize / (nsize + psize - usize)
+                    pref.append(j)
 
-                    edges = sorted(edges, key=lambda x: x[1], reverse=True)
-                    secondary_terminal_edges.extend(edges[1:])
+                # weight (CI) * node_size gives the size of the union between the node and the parent
+                ranked_edges = [((x[0], node), x[1]) for x in sorted(zip(parents, pref), 
+                                            key=lambda x: x[1], reverse=True)]
+                secondary.extend(ranked_edges[1:])
 
-        secondary_edges.sort(key=lambda x: x[1], reverse=True)
-        secondary_terminal_edges.sort(key=lambda x: x[1], reverse=True)
+        secondary.sort(key=lambda x: x[1], reverse=True)
 
-        self._secondary_edges = secondary_edges
-        self._secondary_terminal_edges = secondary_terminal_edges
+        self._secondary = secondary
         LOGGER.report('secondary edges found in %.2fs', '_sec')
 
         return G
 
-    def pick(self, percentage_edges, percentage_terminal_edges=0, **kwargs):
+    def pick(self, top):
         """Picks top x percent edges. Alternative edges are ranked based on the number of 
         overlap terminal nodes between the child and the parent. This is the second 
         step of weave(). Subclasses can override this function to achieve different results.
 
         Parameters
         ----------
-        percentage_edges : positional argument (0 ~ 100)
-            top x percent (alternative) non-terminal edges to be kept in the hierarchy. This parameter 
+        top : keyword argument (0 ~ 100, default=100)
+            top x percent (alternative) edges to be kept in the hierarchy. This parameter 
             controls the number of parents each node has based on a global ranking of the 
-            edges. Note that if set to 0 then each node will only have exactly one parent 
+            edges. Note that if top=0 then each node will only have exactly one parent 
             (except for the root which has none). 
-        
-        percentage_terminal_edges : keyword argument (0 ~ 100)
-            similar to ``percentage_edges`` but for top x percent (alternative) **terminal** edges 
-            to be kept in the hierarchy. 
 
         Returns
         -------
@@ -460,56 +505,30 @@ class Weaver(object):
             
         """
 
-        if self._secondary_edges is None:
+        if self._secondary is None:
             raise ValueError('hierarchy not built. Call weave() first')
 
-        if self._secondary_terminal_edges is None:
-            raise ValueError('hierarchy not built. Call weave() first')
-            
-        add_edges = kwargs.pop('additional', None)
-        replace = kwargs.pop('replace', False)
-
-        G = self._full
-        T = self._full.copy()
+        G = self._full.copy()
 
         #W = [x[1] for x in self._secondary]
-        secondary = [x[0] for x in self._secondary_edges]
-        sectereg = [y[0] for y in self._secondary_terminal_edges]
+        secondary = [x[0] for x in self._secondary]
 
-        if percentage_edges == 0:
+        if top == 0:
             # special treatment for one-parent case for better performance
-            T.remove_edges_from(secondary)
-        elif percentage_edges < 100:
-            n = int(len(secondary) * percentage_edges/100.)
+            G.remove_edges_from(secondary)
+        elif top < 100:
+            n = int(len(secondary) * top/100.)
             removed_edges = secondary[n:]
-            T.remove_edges_from(removed_edges)
-        
-        if percentage_terminal_edges == 0:
-            # special treatment for one-parent case for better performance
-            T.remove_edges_from(sectereg)
-        elif percentage_terminal_edges < 100:
-            m = int(len(sectereg) * percentage_terminal_edges/100.)
-            removed_edges = sectereg[m:]
-            T.remove_edges_from(removed_edges)
-
-        if add_edges is not None:
-            for u, v in add_edges:
-                if not G.has_edge(u, v):
-                    raise ValueError('edge does not exist: (%s, %s)'%(u, v))
-                
-                if replace:
-                    edges_to_be_removed = []
-                    for w in T.predecessors(v):
-                        edges_to_be_removed.append((w, v))
-                    T.remove_edges_from(edges_to_be_removed)
-                T.add_edge(u, v, weight=1.)
+            G.remove_edges_from(removed_edges)
 
         # prune tree
-        self.hier = prune(T, **kwargs)
+
+        self.hier = prune(G)
+        # self.hier = G
 
         # update attributes
-        self.update_depth()
-        #self.relabel()
+        self.update_depths()
+        self.relabel()
         
         return self.hier
 
@@ -522,7 +541,7 @@ class Weaver(object):
 
     root = property(get_root, 'the root node')   
     
-    def update_depth(self):
+    def update_depths(self):
         if self.hier is None:
             raise ValueError('hierarchy not built. Call weave() first')
 
@@ -548,33 +567,6 @@ class Weaver(object):
         root = self.root
         T.nodes[root]['depth'] = 0
         _update_topdown(root)
-
-    def update_depthr(self):
-        if self.hier is None:
-            raise ValueError('hierarchy not built. Call weave() first')
-
-        T = self.hier
-
-        def _update_bottomup(children):
-            Q = [child for child in children]
-
-            while Q:
-                child = Q.pop(0)
-                ch_depthr = T.nodes[child]['depthr']
-
-                for parent in T.predecessors(child):
-                    if 'depthr' in T.nodes[parent]:  # visited
-                        par_depthr = T.nodes[parent]['depthr']
-                        if par_depthr >= ch_depthr - 1:  # already shallower
-                            continue
-                    
-                    T.nodes[parent]['depthr'] = ch_depthr - 1
-                    Q.append(parent)
-
-        # update depths topdown
-        for ter in self.terminals:
-            T.nodes[ter]['depthr'] = 0
-        _update_bottomup(self.terminals)
 
     def get_attribute(self, attr, node=None):
         if self.hier is None:
@@ -682,17 +674,7 @@ class Weaver(object):
 
         return out
 
-    def has_any_terminal(self, node):
-        if self.hier is None:
-            raise ValueError('hierarchy not built. Call weave() first')
-
-        T = self.hier
-        for child in T.successors(node):
-            if not istuple(child):
-                return True
-        return False
-
-    def _topdown_cluster(self, attr, value, **kwargs):
+    def _topdown_cluster(self, attr, value, flat=True):
         """Recovers the partition at specified depth.
 
         Returns
@@ -700,9 +682,6 @@ class Weaver(object):
         H : a Numpy array of labels for all the terminal nodes.
             
         """
-
-        flat = kwargs.pop('flat', True) 
-        stop_before_terminal = kwargs.pop('stop_before_terminal', True)
 
         if self.hier is None:
             raise ValueError('hierarchy not built. Call weave() first')
@@ -727,16 +706,11 @@ class Weaver(object):
             visited[node] = True
 
             if not istuple(node):
-                if not stop_before_terminal:
-                    clusters.append(node)
+                clusters.append(node)
                 continue
 
             if attrs[node] < value:
-                if stop_before_terminal and self.has_any_terminal(node):
-                         clusters.append(node)
                 for child in T.successors(node):
-                    if stop_before_terminal and not istuple(child):
-                        continue
                     Q.append(child)
             elif attrs[node] == value:
                 clusters.append(node)
@@ -758,7 +732,7 @@ class Weaver(object):
         
         return H
 
-    def depth_cluster(self, depth, **kwargs):
+    def depth_cluster(self, depth, flat=True):
         """Recovers the partition at specified depth.
 
         Returns
@@ -767,9 +741,9 @@ class Weaver(object):
             
         """
         
-        return self._topdown_cluster('depth', depth, **kwargs)
+        return self._topdown_cluster('depth', depth, flat)
 
-    def level_cluster(self, level, **kwargs):
+    def level_cluster(self, level, flat=True):
         """Recovers the partition that specified by the index based on the 
         hierarchy.
 
@@ -782,7 +756,7 @@ class Weaver(object):
         if not self.assume_levels:
             LOGGER.warn('Levels were not followed when building the hierarchy.')
 
-        return self._topdown_cluster('level', level, **kwargs)
+        return self._topdown_cluster('level', level, flat)
 
     def write(self, filename, format='ddot'):
         """Writes the hierarchy to a text file.
@@ -820,6 +794,7 @@ class Weaver(object):
         with open(filename, 'ab') as f:
             nx.write_edgelist(G, f, delimiter='\t', data=['type'])
 
+
 def containment_indices_legacy(A, B):
     from collections import defaultdict
 
@@ -830,7 +805,7 @@ def containment_indices_legacy(A, B):
 
     for i in range(n):
         a = A[i]; b = B[i]
-        
+
         counterA[a] += 1
         counterB[b] += 1
         counterAB[(a, b)] += 1
@@ -959,51 +934,39 @@ def get_root(T):
 
     return None
 
-def prune(T, **kwargs):
+def prune(T):
     """Removes the nodes with only one child and the nodes that have no terminal 
-    nodes (e.g. genes) as descendants."""
+    nodes (e.g. genes) as descendants. (This basically removes identical clusters)"""
 
-    strict_single_branch = kwargs.pop('strict_single_branch', False)
     # prune tree
     # remove dead-ends
-    internal_nodes = [node for node in T.nodes() if istuple(node)]
-    out_degrees = [val for key, val in T.out_degree(internal_nodes)]
+    # internal_nodes = [node for node in T.nodes() if istuple(node)]
+    # out_degrees = [val for key, val in T.out_degree(internal_nodes)]
 
-    while (0 in out_degrees):
-        for node in reversed(internal_nodes):
-            outdeg = T.out_degree(node)
-            if istuple(node) and outdeg == 0:
-                T.remove_node(node)
-                internal_nodes.remove(node)
-
-        out_degrees = [val for key, val in T.out_degree(internal_nodes)]
+    # while (0 in out_degrees):
+    #     for node in reversed(internal_nodes):
+    #         outdeg = T.out_degree(node)
+    #         if istuple(node) and outdeg == 0:
+    #             T.remove_node(node)
+    #             internal_nodes.remove(node)
+    #
+    #     out_degrees = [val for key, val in T.out_degree(internal_nodes)]
 
     # remove single branches
     def _single_branch(node):
         indeg = T.in_degree(node)
+        outdeg = T.out_degree(node)
 
-        if indeg != 1:
+        if indeg > 1 or indeg == 0:
+            return False
+        
+        if outdeg > 1 or outdeg == 0:
             return False
 
-        if strict_single_branch:
-            outdeg = T.out_degree(node)
-            if outdeg == 1:
-                child = next(T.successors(node))
-                if not istuple(child):
-                    outdeg = 0
-        else: # is a single branch if there is only one internal outedge
-            outdeg = 0
-            for child in T.successors(node):
-                if istuple(child):
-                    outdeg += 1
-
-        if outdeg > 1:
+        # if attached to a terminal node, not considered as a single branch 
+        child = next(T.successors(node))
+        if not istuple(child):
             return False
-        elif outdeg == 0:
-            outdeg = T.out_degree(node)
-            if outdeg != 1:
-                return False
-
         return True
 
     #all_nodes = [node for node in T.nodes()]
@@ -1012,15 +975,13 @@ def prune(T, **kwargs):
     for node in all_nodes:
         if _single_branch(node):
             parent = next(T.predecessors(node))
-            children = [child for child in T.successors(node)]
+            child  = next(T.successors(node))
             
             w1 = T[parent][node]['weight']
-            
-            for child in children:
-                w2 = T[node][child]['weight']
-                T.add_edge(parent, child, weight=w1 + w2)
+            w2 = T[node][child]['weight']
 
             T.remove_node(node)
+            T.add_edge(parent, child, weight=w1 + w2)
 
     return T
 
@@ -1122,7 +1083,6 @@ def show_hierarchy(T, **kwargs):
     edgescale = kwargs.pop('edge_scale', None)
     edgelabel = kwargs.pop('edge_label', False)
     interactive = kwargs.pop('interactive', True)
-    excluded_nodes = kwargs.pop('excluded_nodes', [])
 
     isWindows = osname == 'nt'
 
@@ -1130,16 +1090,16 @@ def show_hierarchy(T, **kwargs):
         style += '.exe'
 
     if not leaf:
-        T2 = T.subgraph(n for n in T.nodes() if istuple(n) and n not in excluded_nodes)
+        T2 = T.subgraph(n for n in T.nodes() if istuple(n))
         if 'nodelist' in kwargs:
             nodes = kwargs.pop('nodelist')
             nonleaves = []
             for node in nodes:
-                if istuple(node) and node not in excluded_nodes:
-                    nonleaves.append(node)
+                # if istuple(node): # TODO: fix here
+                nonleaves.append(node)
             kwargs['nodelist'] = nonleaves
     else:
-        T2 = T.subgraph(n for n in T.nodes() if n not in excluded_nodes)
+        T2 = T
     
     pos = graphviz_layout(T2, prog=style)
 
@@ -1222,25 +1182,6 @@ def weave(partitions, terminals=None, **kwargs):
 
 if __name__ == '__main__':
     from pylab import *
-
-    # L = ['11111111',
-    #      '11111100',
-    #      '00001111',
-    #      '11100000',
-    #      '00110000',
-    #      '00001100',
-    #      '00000011']
-
-    # L = [list(p) for p in L]
-    # nodes = 'ABCDEFGH'
-
-    # weaver = Weaver(L, boolean=True, terminals=nodes, assume_levels=False)
-    # weaver.weave(cutoff=0.9, top=100)
-    # weaver.pick(0)
-
-    # ion()
-    # figure()
-    # weaver.show()
 
     P = ['11111111',
          '11111100',

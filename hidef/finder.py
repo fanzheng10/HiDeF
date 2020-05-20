@@ -537,7 +537,7 @@ def output_gml(out):
 if __name__ == '__main__':
     par = argparse.ArgumentParser()
     par.add_argument('--g', required=True, help='A tab separated file for the input graph')
-    par.add_argument('--minres', type=float, default=0.001, help='Minimum resolution parameter') # not-expose
+    par.add_argument('--minres', type=float, default=0.001, help='Minimum resolution parameter') # cdaps not-expose
     par.add_argument('--maxres', type=float, default=50.0, help='Maximum resolution parameter. Increase to get more smaller communities.') # Maximum resolution parameter
     par.add_argument('--n', type=int, help= 'Target community number. Explore the maximum resolution parameter until the number of generated communities at this resolution is close enough to this value. Increase to get more smaller communities.') # Target community number
     par.add_argument('--t', type=float, default=0.1, help='Sampling density. Inversed density of sampling the resolution parameter. Decrease to introduce more transient communities (will increase running time)') # cdaps not-expose
@@ -549,7 +549,7 @@ if __name__ == '__main__':
     par.add_argument('--alg', default='louvain', choices=['louvain', 'leiden'], help='Choose to use Louvain or the newer Leiden algorithm. Must be "louvain" or "leiden".')
     args = par.parse_args()
 
-    G = ig.Graph.Read_Ncol(args.g) # redundant
+    G = ig.Graph.Read_Ncol(args.g)
     G_component  = list(G.components(mode='WEAK'))
     if args.n != None:
         args.n = args.n + len(G_component) - 1
@@ -562,7 +562,8 @@ if __name__ == '__main__':
                sample=args.s,
                minres=args.minres,
                maxres=args.maxres,
-               maxn=args.n
+               maxn=args.n,
+               alg=args.alg
                )
     # # use weaver to organize them (due to the previous collapsed step, need to re-calculate containment index. This may be ok
     # components = sorted(nx.connected_components(cluG), key=len, reverse=True)
