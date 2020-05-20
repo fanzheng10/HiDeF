@@ -1,5 +1,7 @@
 # HiDeF (Hierarchical community Decoding Framework)
 
+![Figure](fig1.png)
+
 
 ## Introduction
 
