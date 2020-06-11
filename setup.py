@@ -20,8 +20,8 @@ setup(
 
     long_description_content_type='text/markdown',  
     url='https://github.com/HierLab/HiDeF',
-    author='She Zhang',  
-    author_email='shz66@pitt.edu',  
+    author='She Zhang; Fan Zheng',
+    author_email='shz66@pitt.edu; f6zheng@health.ucsd.edu',
 
     # For a list of valid classifiers, see https://pypi.org/classifiers/
     classifiers=[ 
