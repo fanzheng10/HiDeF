@@ -30,7 +30,7 @@ HiDeF has been fully integrated with the [Cytoscape](https://cytoscape.org/) env
 By using this option, users can leverage the computing power of [National Resources of Network Biology (NRNB)](https://nrnb.org/) for the HiDeF analysis, and enjoy other nice features provided in the CDAPS framework, including (1) interact with the source network to visualize the subnetwork of any detected community (2) perform gene set enrichment analysis (when the vertices of the source network are proteins/genes) (3) store and share the models via the [NDEx](http://www.ndexbio.org/) database.
 
 
-### Running HiDeF as a command-line tool
+### Running HiDeF as a command-line tool (Recommended for big input networks)
 
 Using the codes in this repository, HiDeF can be used as a command-line tool. There are two main components of the scripts: `finder.py` and `weaver.py`.
 
@@ -51,7 +51,7 @@ Other auxiliary parameters are explained in the supplemental material of the man
 - `$out.gml`: A file in the GML format that can be opened in Cytoscape to visualize the hierarchy (using "yFiles hierarchic layout" in Cytoscape)
 
 
-### Using HiDeF as a python package.
+### Using HiDeF as a python package
 
 The following example shows how to build a hierarchical view of a network based on pre-computed communities, by using HiDeF as a Python package. This workflow only involves `weaver.py`.
 
