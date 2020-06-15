@@ -596,6 +596,6 @@ if __name__ == '__main__':
     output_nodes(weaver, G, args.o, len_component)
     output_edges(weaver, G, args.o)
     if args.skipgml is False:
-        output_gml(args.o) # TODO: add stability to the output network
+        output_gml(args.o)
 
 

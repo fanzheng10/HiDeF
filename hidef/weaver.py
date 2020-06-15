@@ -395,10 +395,8 @@ class Weaver(object):
         LOGGER.report('redundant edges removed in %.2fs', '_redundancy')
 
 
-        # attach graph nodes to nodes in G
-        # for efficiency purposes, this is done after redundant edges are 
-        # removed. So we need to make sure we don't introduce new redundancy
-        # TODO: this is still taking much time in certain cases this can be skipped
+        # attach graph nodes to nodes in G (this part can be skipped)
+
         LOGGER.timeit('_attach')
         LOGGER.info('attaching terminal nodes to the graph...')
         X = np.arange(n_nodes)
@@ -430,6 +428,28 @@ class Weaver(object):
                     attached.append(node)
 
         LOGGER.report('terminal nodes attached in %.2fs', '_attach')
+
+        # update node assignments
+        LOGGER.timeit('_update')
+        LOGGER.info('propagate terminal node assignments upward in the hierarchy')
+        L_sp = sp.sparse.csr_matrix(L.T)
+
+        ## construct a community connectivity matrix
+        row, col = [], []
+        for v in nodes:
+            row.append(v[0])
+            col.append(v[0])
+        for v, w in itertools.combinations(nodes, 2):
+            if nx.has_path(G, v, w): # w is a descendant of v
+                row.append(w[0])
+                col.append(v[0])
+        data = np.ones_like(row, dtype=int)
+        cc_mat = sp.sparse.coo_matrix((data, (row, col)), shape=(L.shape[0], L.shape[0]))
+        cc_mat = cc_mat.tocsr()
+        L_sp_new = L_sp.dot(cc_mat) > 0
+        self._assignment = L_sp_new.toarray().T
+        LOGGER.report('terminal nodes propagated in %.2fs', '_update')
+
 
         in_degrees = np.array([deg for (_, deg) in G.in_degree()])
         if np.where(in_degrees==0)[0] > 1:
