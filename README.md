@@ -4,7 +4,7 @@
 
 ## Introduction
 
-HiDeF is an analysis framework to robustly resolve the hierarchical structures of networks based on multiscale community detection and the concepts of persistent homology. It is a collaboration between teams in UC San Diego and University of Pittsburgh. It is associated with the following manuscript:
+HiDeF is an analysis framework to robustly resolve the hierarchical structures of networks based on multiscale community detection and the concepts of persistent homology. It is a collaboration between teams at UC San Diego and the University of Pittsburgh. It is associated with the following manuscript:
 
 Fan Zheng, She Zhang, Christopher Churas, Dexter Pratt, Ivet Bahar, Trey Ideker. Submitted (2020) [Preprint]()
 
@@ -20,8 +20,6 @@ pandas
 
 
 ## Usage
-
-We provide multiple options to perform the HiDeF analysis.
 
 ### Running HiDeF from Cytoscape (Recommended)
 
@@ -55,7 +53,7 @@ Other auxiliary parameters are explained in the supplemental material of the man
 
 The following example shows how to build a hierarchical view of a network based on pre-computed communities, by using HiDeF as a Python package. This workflow only involves `weaver.py`.
 
-First, the user needs to provide the clustering results on these data points. These results may be obtained from any multilevel clustering algorithm of user's choice. In this example, suppose we have 8 data points and define 7 ways of partitioning them (in a Python terminal), 
+First, the user needs to provide the clustering results on these data points. These results may be obtained from any multilevel clustering algorithm of the user's choice. In this example, suppose we have 8 data points and define 7 ways of partitioning them (in a Python terminal), 
 
 ```
 >>> P = ['11111111',
