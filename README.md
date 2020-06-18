@@ -6,7 +6,7 @@
 
 HiDeF is an analysis framework to robustly resolve the hierarchical structures of networks based on multiscale community detection and the concepts of persistent homology. It is a collaboration between teams at UC San Diego and the University of Pittsburgh. It is associated with the following manuscript:
 
-Fan Zheng, She Zhang, Christopher Churas, Dexter Pratt, Ivet Bahar, Trey Ideker. Submitted (2020) [Preprint]()
+Fan Zheng, She Zhang, Christopher Churas, Dexter Pratt, Ivet Bahar, Trey Ideker. Submitted (2020) [Preprint](https://biorxiv.org/cgi/content/short/2020.06.16.151555v1)
 
 ## Dependencies
 
