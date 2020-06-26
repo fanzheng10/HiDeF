@@ -538,7 +538,6 @@ def output_gml(out):
         dic = df_node[c].to_dict()
         nx.set_node_attributes(G, dic, c)
     nx.write_gml(G, out +'.gml')
-        # TODO: upload to NDEx, problem is that NDEx uses networkx1.11
 
 if __name__ == '__main__':
     par = argparse.ArgumentParser()
