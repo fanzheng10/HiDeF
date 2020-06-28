@@ -41,13 +41,17 @@ To sweep the resolution profile and generate an optimized hierarchy based on pan
 - `$maxres`: the upper limit of the sampled range of the resolution parameter.
 - `$out`: a prefix string for the output files.  
 
-Other auxiliary parameters are explained in the supplemental material of the manuscript.
+Other auxiliary parameters are explained in the manuscript.
+
 
 #### Outputs
 - `$out.nodes`: A TSV file describing the content (nodes in the input network) of each community. The last column of this file contains the persistence of each community.  
 - `$out.edges`: A TSV file describing the parent-child relationships of communities in the hierarchy. The parent communities are in the 1st column and the children communities are in the 2nd column.  
 - `$out.gml`: A file in the GML format that can be opened in Cytoscape to visualize the hierarchy (using "yFiles hierarchic layout" in Cytoscape)
 
+#### Integration with ScanPy
+
+We provide a Jupyter notebook to demonstrate how to integrate the results of HiDeF with popular single-cell data analysis framework (here [ScanPy](https://scanpy.readthedocs.io/en/stable/)). 
 
 ### Using HiDeF as a python package
 
