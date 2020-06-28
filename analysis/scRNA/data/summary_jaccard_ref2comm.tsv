@@ -1,0 +1,81 @@
+epithelial cell	15680	Cluster2-0	0.36550067381496454
+leukocyte	13181	Cluster1-2	0.33388956310679613
+myeloid cell	7545	Cluster1-2	0.5832008479067302
+lymphocyte	6441	Cluster1-4	0.5460434983803795
+macrophage	4850	Cluster1-2	0.9070677931176592
+microglial cell	4394	Cluster1-2	0.9938817131203264
+endothelial cell	4359	Cluster1-7	0.5678871958153286
+B cell	3888	Cluster1-4	0.869837296620776
+epithelial cell of large intestine	3879	Cluster3-0	0.978657752635639
+epidermal cell	3657	Cluster1-3	0.9746531483457844
+keratinocyte	3382	Cluster1-3	0.9012806830309499
+basal cell	2988	Cluster1-9	0.42561016382480776
+mesenchymal stem cell	2606	Cluster2-2	0.6747496046389035
+fibroblast	2238	Cluster2-6	0.8950323974082074
+T cell	2194	Cluster1-5	0.772165312610385
+mesenchymal stem cell of adipose	2107	Cluster3-6	0.5809199318568995
+hematopoietic precursor cell	1710	Cluster2-8	0.7971181556195965
+stem cell of epidermis	1701	Cluster2-7	0.5298434442270059
+basal cell of epidermis	1648	Cluster2-7	0.5423983943803311
+oligodendrocyte	1574	Cluster1-8	0.8713745271122321
+keratinocyte stem cell	1404	Cluster3-8	0.9817287420941673
+bladder cell	1378	Cluster1-14	0.5010877447425671
+immature T cell	1374	Cluster1-5	0.4851380042462845
+enteroendocrine cell	1111	Cluster3-12	0.9400715563506261
+blood cell	1083	Cluster2-11	0.5133333333333333
+skeletal muscle satellite cell	979	Cluster1-11	0.9467980295566503
+enterocyte of epithelium of large intestine	964	Cluster6-1	0.9393326592517695
+stromal cell	863	Cluster2-37	0.2690992018244014
+large intestine goblet cell	833	Cluster4-4	0.8403275332650972
+mesenchymal cell	830	Cluster5-24	0.31070195627157654
+precursor B cell	823	Cluster3-22	0.5878787878787879
+epithelial cell of lung	806	Cluster2-22	0.6732186732186732
+granulocyte	786	Cluster2-11	0.6278877887788779
+Slamf1-negative multipotent progenitor cell	713	Cluster3-13	0.5959885386819485
+lung endothelial cell	693	Cluster2-22	0.7817403708987162
+naive B cell	692	Cluster3-9	0.2570036540803898
+bladder urothelial cell	683	Cluster1-15	0.9839650145772595
+luminal epithelial cell of mammary gland	578	Cluster3-28	0.7066895368782161
+astrocyte	472	Cluster5-7	0.9257731958762887
+type B pancreatic cell	449	Cluster4-27	0.9737991266375546
+skeletal muscle satellite stem cell	439	Cluster1-11	0.4302788844621514
+monocyte	421	Cluster4-13	0.5839524517087668
+hepatocyte	391	Cluster2-38	0.6147959183673469
+pancreatic A cell	390	Cluster4-26	0.8333333333333334
+immature B cell	344	Cluster3-33	0.6035242290748899
+late pro-B cell	306	Cluster1-18	0.86084142394822
+neuron	281	Cluster5-30	0.8229166666666666
+natural killer cell	278	Cluster3-43	0.6274509803921569
+granulocytopoietic cell	221	Cluster3-53	0.968609865470852
+epithelial cell of proximal tubule	219	Cluster3-56	0.9454545454545454
+oligodendrocyte precursor cell	203	Cluster4-42	0.8942731277533039
+pancreatic acinar cell	182	Cluster2-42	0.8888888888888888
+endothelial cell of hepatic sinusoid	182	Cluster3-58	0.9836956521739131
+myofibroblast cell	178	Cluster3-49	0.6910569105691057
+endocardial cell	165	Cluster2-36	0.5627240143369175
+pancreatic ductal cell	161	Cluster2-44	0.9447852760736196
+common lymphoid progenitor	156	Cluster3-26	0.31497797356828194
+brain pericyte	156	Cluster3-48	0.5843137254901961
+pancreatic D cell	140	Cluster4-52	0.821656050955414
+granulocyte monocyte progenitor cell	134	Cluster3-26	0.123046875
+Slamf1-positive multipotent progenitor cell	134	Cluster3-26	0.24458874458874458
+cardiac muscle cell	133	Cluster5-40	0.8807947019867549
+kidney collecting duct epithelial cell	121	Cluster5-44	0.8671875
+erythrocyte	91	Cluster4-31	0.20540540540540542
+classical monocyte	90	Cluster5-18	0.17091836734693877
+pancreatic PP cell	73	Cluster4-26	0.14224137931034483
+Brush cell of epithelium proper of large intestine	63	Cluster4-31	0.13896457765667575
+Kupffer cell	61	Cluster3-55	0.23076923076923078
+professional antigen presenting cell	59	Cluster4-53	0.07027027027027027
+megakaryocyte-erythroid progenitor cell	55	Cluster3-26	0.06209850107066381
+mature natural killer cell	49	Cluster3-43	0.15789473684210525
+pancreatic stellate cell	49	Cluster3-67	0.673469387755102
+smooth muscle cell	42	Cluster3-48	0.14624505928853754
+Bergmann glial cell	40	Cluster5-7	0.08423326133909287
+immature NK T cell	37	Cluster3-38	0.0967741935483871
+immature natural killer cell	36	Cluster3-43	0.10423452768729642
+DN1 thymic pro-T cell	32	Cluster3-38	0.07466666666666667
+regulatory T cell	27	Cluster4-33	0.020710059171597635
+basophil	25	Cluster4-53	0.0718954248366013
+ciliated columnar cell of tracheobronchial tree	25	Cluster3-66	0.5102040816326531
+pre-natural killer cell	22	Cluster3-43	0.05863192182410423

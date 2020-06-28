@@ -1,0 +1,274 @@
+Cluster0-0	44949	epithelial cell	0.3488397962134864
+Cluster1-0	7812	epithelial cell of large intestine	0.4961607371384694
+Cluster2-0	7625	epithelial cell of large intestine	0.5083256850662121
+Cluster1-1	6458	mesenchymal stem cell	0.40157723828668623
+Cluster1-2	4405	microglial cell	0.9938817131203264
+Cluster2-1	3995	myeloid cell	0.20635584361279533
+Cluster3-0	3816	epithelial cell of large intestine	0.978657752635639
+Cluster2-2	3748	mesenchymal stem cell	0.6747496046389035
+Cluster1-3	3744	epidermal cell	0.9746531483457844
+Cluster1-4	3582	B cell	0.869837296620776
+Cluster2-3	2893	microglial cell	0.6531306715063521
+Cluster4-0	2841	epithelial cell of large intestine	0.7301750772399588
+Cluster1-5	2823	T cell	0.772165312610385
+Cluster3-1	2618	myeloid cell	0.22578699794958387
+Cluster2-4	2606	B cell	0.6287935791321796
+Cluster1-6	2595	hematopoietic precursor cell	0.5932642487046632
+Cluster1-7	2535	endothelial cell	0.5678871958153286
+Cluster3-2	2332	astrocyte	0.19777872703972663
+Cluster2-5	2318	keratinocyte stem cell	0.6056945642795514
+Cluster2-6	2149	fibroblast	0.8950323974082074
+Cluster3-3	2115	mesenchymal stem cell	0.32352116624614524
+Cluster3-4	2012	epithelial cell of large intestine	0.18842041557393585
+Cluster5-0	1970	epithelial cell of large intestine	0.5070858026281886
+Cluster5-1	1882	epithelial cell of large intestine	0.48402885110767646
+Cluster3-5	1842	microglial cell	0.415021556614477
+Cluster4-1	1691	myeloid cell	0.12496954933008526
+Cluster3-6	1605	mesenchymal stem cell of adipose	0.5809199318568995
+Cluster3-7	1447	fibroblast	0.6190685413005272
+Cluster2-7	1426	basal cell of epidermis	0.5423983943803311
+Cluster3-8	1416	keratinocyte stem cell	0.9817287420941673
+Cluster2-8	1408	hematopoietic precursor cell	0.7971181556195965
+Cluster1-8	1394	oligodendrocyte	0.8713745271122321
+Cluster2-9	1376	T cell	0.5223880597014925
+Cluster3-9	1372	B cell	0.33808191299923684
+Cluster1-9	1276	basal cell	0.42561016382480776
+Cluster4-2	1262	mesenchymal cell	0.26100060277275466
+Cluster2-10	1204	microglial cell	0.2731407778030475
+Cluster1-10	1194	endothelial cell	0.15470991890205865
+Cluster2-11	1187	granulocyte	0.6278877887788779
+Cluster3-10	1186	B cell	0.2871638762049721
+Cluster3-11	1120	microglial cell	0.2546075085324232
+Cluster4-3	1086	microglial cell	0.24687144482366324
+Cluster3-12	1058	enteroendocrine cell	0.9400715563506261
+Cluster6-0	1012	epithelial cell of large intestine	0.2608919824697087
+Cluster1-11	997	skeletal muscle satellite cell	0.9467980295566503
+Cluster4-4	965	large intestine goblet cell	0.8403275332650972
+Cluster3-13	958	Slamf1-negative multipotent progenitor cell	0.5959885386819485
+Cluster6-1	954	enterocyte of epithelium of large intestine	0.9393326592517695
+Cluster2-12	922	precursor B cell	0.4651553316540722
+Cluster5-2	914	myeloid cell	0.049633949621541135
+Cluster3-14	897	stem cell of epidermis	0.30356246864024083
+Cluster2-13	883	endothelial cell	0.2000915750915751
+Cluster4-5	865	epithelial cell of large intestine	0.2223653697500644
+Cluster5-3	862	myeloid cell	0.08687782805429864
+Cluster1-12	862	endothelial cell	0.18929384965831436
+Cluster5-4	844	mesenchymal stem cell	0.16593443730990198
+Cluster1-13	821	lung endothelial cell	0.701123595505618
+Cluster2-14	812	endothelial cell	0.18465063001145476
+Cluster4-6	804	mesenchymal stem cell of adipose	0.21443471005423445
+Cluster3-15	781	basal cell of epidermis	0.4597355769230769
+Cluster4-7	776	mesenchymal stem cell of adipose	0.30570652173913043
+Cluster3-16	764	kidney collecting duct epithelial cell	0.1568627450980392
+Cluster2-15	762	microglial cell	0.17315130830489192
+Cluster4-8	747	astrocyte	0.5851755526657998
+Cluster4-9	741	keratinocyte stem cell	0.5212765957446809
+Cluster5-5	723	microglial cell	0.16454255803368228
+Cluster4-10	712	fibroblast	0.3001322168356104
+Cluster2-16	706	endothelial cell	0.16143086448062371
+Cluster1-14	692	bladder cell	0.5010877447425671
+Cluster4-11	683	naive B cell	0.20087336244541484
+Cluster1-15	678	bladder urothelial cell	0.9839650145772595
+Cluster2-17	672	natural killer cell	0.39500734214390604
+Cluster4-12	649	keratinocyte stem cell	0.4519094766619519
+Cluster4-13	645	monocyte	0.5839524517087668
+Cluster2-18	641	basal cell	0.21411843425894947
+Cluster4-14	641	B cell	0.15624202195557824
+Cluster1-16	635	hepatocyte	0.6106750392464678
+Cluster3-17	624	T cell	0.27166064981949456
+Cluster2-19	614	immature T cell	0.4384949348769899
+Cluster2-20	599	basal cell	0.19966555183946488
+Cluster4-15	594	B cell	0.1462915601023018
+Cluster4-16	591	basal cell of epidermis	0.32016509433962265
+Cluster7-0	586	epithelial cell of large intestine	0.15106986336684713
+Cluster3-18	581	granulocyte	0.38781725888324875
+Cluster2-21	579	skeletal muscle satellite cell	0.5502487562189055
+Cluster4-17	572	basal cell of epidermis	0.33815551537070526
+Cluster4-18	569	mesenchymal stem cell of adipose	0.21305530371713507
+Cluster2-22	556	lung endothelial cell	0.7817403708987162
+Cluster3-19	549	T cell	0.2394938996836873
+Cluster3-20	545	fibroblast	0.23964365256124723
+Cluster3-21	544	microglial cell	0.12329390354868063
+Cluster4-19	540	microglial cell	0.12263936291240045
+Cluster2-23	534	oligodendrocyte	0.33080808080808083
+Cluster5-6	533	mesenchymal stem cell of adipose	0.21658986175115208
+Cluster4-20	530	B cell	0.1279040081695175
+Cluster4-21	518	Slamf1-negative multipotent progenitor cell	0.32508073196986004
+Cluster6-2	497	myeloid cell	0.030233153984114785
+Cluster6-3	496	mesenchymal stem cell	0.10864903502501787
+Cluster7-1	491	enterocyte of epithelium of large intestine	0.4984552008238929
+Cluster4-22	489	microglial cell	0.1112881201638598
+Cluster2-24	488	myofibroblast cell	0.3619631901840491
+Cluster3-22	487	precursor B cell	0.5878787878787879
+Cluster4-23	478	microglial cell	0.10853242320819112
+Cluster2-25	477	oligodendrocyte	0.30304955527318933
+Cluster3-23	474	endothelial cell	0.1082320568676909
+Cluster4-24	466	fibroblast	0.20822162645218945
+Cluster4-25	466	T cell	0.20307553143374038
+Cluster5-7	462	astrocyte	0.9257731958762887
+Cluster4-26	457	pancreatic A cell	0.8333333333333334
+Cluster4-27	455	type B pancreatic cell	0.9737991266375546
+Cluster6-4	454	granulocyte monocyte progenitor cell	0.072992700729927
+Cluster4-28	451	mesenchymal stem cell of adipose	0.19254079254079254
+Cluster7-2	449	enterocyte of epithelium of large intestine	0.43890020366598775
+Cluster5-8	448	keratinocyte stem cell	0.3181494661921708
+Cluster3-24	446	keratinocyte	0.12853773584905662
+Cluster5-9	445	naive B cell	0.16495901639344263
+Cluster3-25	444	microglial cell	0.10104688211197087
+Cluster3-26	441	common lymphoid progenitor	0.31497797356828194
+Cluster3-27	439	oligodendrocyte	0.27003154574132493
+Cluster2-26	435	endothelial cell	0.09803023362345396
+Cluster2-27	435	bladder urothelial cell	0.636896046852123
+Cluster4-29	427	Slamf1-negative multipotent progenitor cell	0.3784764207980653
+Cluster5-10	425	basal cell of epidermis	0.25712553062462096
+Cluster2-28	420	endocardial cell	0.37971698113207547
+Cluster5-11	419	keratinocyte stem cell	0.2956645344705046
+Cluster3-28	417	luminal epithelial cell of mammary gland	0.7066895368782161
+Cluster2-29	417	skeletal muscle satellite stem cell	0.41254125412541254
+Cluster4-30	417	astrocyte	0.27546628407460544
+Cluster3-29	414	endothelial cell	0.09447374455400137
+Cluster5-12	414	B cell	0.09941221569128546
+Cluster5-13	410	large intestine goblet cell	0.48862275449101794
+Cluster5-14	408	Slamf1-negative multipotent progenitor cell	0.24555555555555555
+Cluster3-30	406	endothelial cell	0.09288990825688073
+Cluster5-15	404	mesenchymal stem cell of adipose	0.1592797783933518
+Cluster7-3	404	epithelial cell of large intestine	0.10415055426656354
+Cluster3-31	402	basal cell	0.13453815261044177
+Cluster1-17	397	pancreatic acinar cell	0.44389027431421446
+Cluster2-30	394	endothelial cell of hepatic sinusoid	0.4582278481012658
+Cluster5-16	390	epithelial cell of large intestine	0.10025773195876289
+Cluster3-32	385	endothelial cell	0.08707607699358387
+Cluster3-33	384	immature B cell	0.6035242290748899
+Cluster3-34	384	microglial cell	0.08739189804278562
+Cluster3-35	381	granulocyte	0.46608040201005024
+Cluster3-36	378	immature T cell	0.2704858593183466
+Cluster3-37	378	naive B cell	0.12513144058885384
+Cluster5-17	377	mesenchymal stem cell of adipose	0.14259429622815087
+Cluster3-38	371	immature NK T cell	0.0967741935483871
+Cluster5-18	369	monocyte	0.31886477462437396
+Cluster2-31	365	bladder cell	0.2639593908629442
+Cluster5-19	365	fibroblast	0.16309204647006256
+Cluster5-20	364	epithelial cell of large intestine	0.09327492914197372
+Cluster2-32	357	microglial cell	0.08075523202911739
+Cluster4-31	355	erythrocyte	0.20540540540540542
+Cluster5-21	350	mesenchymal stem cell of adipose	0.11732605729877217
+Cluster6-5	345	blood cell	0.02881844380403458
+Cluster3-39	344	oligodendrocyte	0.21855146124523506
+Cluster3-40	340	endothelial cell	0.07651775486827034
+Cluster2-33	339	oligodendrocyte	0.2153748411689962
+Cluster3-41	339	luminal epithelial cell of mammary gland	0.2210386151797603
+Cluster6-6	335	microglial cell	0.07624032771961765
+Cluster4-32	335	neuron	0.3362255965292842
+Cluster5-22	330	B cell	0.07877237851662404
+Cluster2-34	327	bladder cell	0.23730043541364296
+Cluster5-23	325	naive B cell	0.10423452768729642
+Cluster8-0	323	epithelial cell of large intestine	0.08326888373292085
+Cluster4-33	318	T cell	0.13665158371040723
+Cluster4-34	311	granulocyte	0.2966903073286052
+Cluster4-35	310	microglial cell	0.07055075102412381
+Cluster5-24	309	mesenchymal cell	0.31070195627157654
+Cluster5-25	309	keratinocyte stem cell	0.21921708185053382
+Cluster5-26	307	large intestine goblet cell	0.20126448893572182
+Cluster5-27	307	B cell	0.07564102564102564
+Cluster3-42	304	skeletal muscle satellite cell	0.2946518668012109
+Cluster3-43	303	natural killer cell	0.6274509803921569
+Cluster4-36	303	microglial cell	0.06847133757961783
+Cluster4-37	297	mesenchymal stem cell of adipose	0.13610586011342155
+Cluster5-28	285	Slamf1-negative multipotent progenitor cell	0.27621483375959077
+Cluster3-44	279	lung endothelial cell	0.3945480631276901
+Cluster6-7	273	microglial cell	0.0621301775147929
+Cluster2-35	272	mesenchymal cell	0.2903981264637002
+Cluster2-36	271	endocardial cell	0.5627240143369175
+Cluster1-18	269	late pro-B cell	0.86084142394822
+Cluster5-29	268	stromal cell	0.06296992481203008
+Cluster3-45	267	bladder cell	0.1937590711175617
+Cluster3-46	260	skeletal muscle satellite cell	0.25025227043390513
+Cluster7-4	260	granulocyte monocyte progenitor cell	0.09141274238227147
+Cluster6-8	257	astrocyte	0.5444915254237288
+Cluster4-38	254	keratinocyte	0.07288285629979345
+Cluster3-47	253	lung endothelial cell	0.35724533715925394
+Cluster8-1	251	epithelial cell of large intestine	0.06470739881412735
+Cluster2-37	250	stromal cell	0.2690992018244014
+Cluster3-48	248	brain pericyte	0.5843137254901961
+Cluster4-39	245	granulocyte	0.11580086580086581
+Cluster5-30	244	neuron	0.8229166666666666
+Cluster5-31	242	large intestine goblet cell	0.24277456647398843
+Cluster2-38	242	hepatocyte	0.6147959183673469
+Cluster2-39	241	bladder urothelial cell	0.3469387755102041
+Cluster3-49	238	myofibroblast cell	0.6910569105691057
+Cluster4-40	237	epidermal cell	0.06393442622950819
+Cluster3-50	236	basal cell	0.07862161257945802
+Cluster3-51	236	fibroblast	0.10053380782918149
+Cluster5-32	236	mesenchymal stem cell of adipose	0.09179869524697111
+Cluster6-9	235	myeloid cell	0.026656109791501716
+Cluster2-40	233	oligodendrocyte	0.14657360406091371
+Cluster4-41	231	kidney collecting duct epithelial cell	0.4789915966386555
+Cluster3-52	230	endothelial cell	0.05276439550355586
+Cluster6-10	228	mesenchymal stem cell	0.06142322097378277
+Cluster6-11	227	epithelial cell of large intestine	0.05824742268041237
+Cluster4-42	227	oligodendrocyte precursor cell	0.8942731277533039
+Cluster4-43	224	luminal epithelial cell of mammary gland	0.2610062893081761
+Cluster3-53	218	granulocytopoietic cell	0.968609865470852
+Cluster8-2	218	epithelial cell of large intestine	0.05620005155968033
+Cluster5-33	212	naive B cell	0.07491082045184304
+Cluster3-54	212	immature T cell	0.15261627906976744
+Cluster3-55	211	hepatocyte	0.3230769230769231
+Cluster4-44	211	immature T cell	0.09764542936288088
+Cluster3-56	209	epithelial cell of proximal tubule	0.9454545454545454
+Cluster5-34	206	astrocyte	0.3921971252566735
+Cluster5-35	201	epithelial cell of large intestine	0.05154639175257732
+Cluster4-45	200	basal cell of epidermis	0.11864406779661017
+Cluster5-36	199	monocyte	0.2757201646090535
+Cluster2-41	198	endothelial cell	0.04542326221610461
+Cluster3-57	195	basal cell of epidermis	0.11764705882352941
+Cluster2-42	192	pancreatic acinar cell	0.8888888888888888
+Cluster7-5	190	blood cell	0.020032051282051284
+Cluster4-46	189	keratinocyte	0.05526004728132388
+Cluster4-47	188	immature T cell	0.13024602026049203
+Cluster5-37	188	mesenchymal stem cell of adipose	0.07443820224719101
+Cluster8-3	184	epithelial cell of large intestine	0.047434905903583395
+Cluster3-58	183	endothelial cell of hepatic sinusoid	0.9836956521739131
+Cluster5-38	183	keratinocyte stem cell	0.1263307310149042
+Cluster4-48	177	macrophage	0.03266228430566968
+Cluster2-43	173	lung endothelial cell	0.08114856429463171
+Cluster4-49	171	stem cell of epidermis	0.07772020725388601
+Cluster4-50	168	oligodendrocyte	0.06349206349206349
+Cluster5-39	167	neuron	0.5238095238095238
+Cluster4-51	161	oligodendrocyte	0.09602021478205938
+Cluster2-44	156	pancreatic ductal cell	0.9447852760736196
+Cluster5-40	151	cardiac muscle cell	0.8807947019867549
+Cluster1-19	151	hepatocyte	0.3826530612244898
+Cluster3-59	151	basal cell of epidermis	0.08308248043347381
+Cluster2-45	149	immature T cell	0.09489575844716032
+Cluster5-41	149	Slamf1-negative multipotent progenitor cell	0.16172506738544473
+Cluster4-52	146	pancreatic D cell	0.821656050955414
+Cluster3-60	144	blood cell	0.024207011686143573
+Cluster4-53	139	basophil	0.0718954248366013
+Cluster5-42	139	mesenchymal stem cell of adipose	0.06244087038789026
+Cluster4-54	133	monocyte	0.13991769547325103
+Cluster6-12	133	epithelial cell of large intestine	0.03375418706518939
+Cluster5-43	129	keratinocyte	0.037529550827423167
+Cluster3-61	124	endothelial cell	0.028446891488873596
+Cluster6-13	120	neuron	0.4169611307420495
+Cluster5-44	118	kidney collecting duct epithelial cell	0.8671875
+Cluster2-46	113	endothelial cell	0.025923376921312226
+Cluster3-62	105	epithelial cell of lung	0.1260815822002472
+Cluster3-63	99	microglial cell	0.022530723714155668
+Cluster3-64	94	bladder cell	0.0674401740391588
+Cluster8-4	92	enterocyte of epithelium of large intestine	0.08978328173374613
+Cluster1-20	92	immature B cell	0.1065989847715736
+Cluster3-65	91	hepatocyte	0.23273657289002558
+Cluster5-45	87	fibroblast	0.035634743875278395
+Cluster2-47	59	pancreatic stellate cell	0.44
+Cluster2-48	53	immature B cell	0.11204481792717087
+Cluster4-55	53	fibroblast	0.023224653863331845
+Cluster5-46	51	stem cell of epidermis	0.029982363315696647
+Cluster3-66	49	ciliated columnar cell of tracheobronchial tree	0.5102040816326531
+Cluster2-49	48	endothelial cell	0.010779816513761468
+Cluster3-67	33	pancreatic stellate cell	0.673469387755102
+Cluster5-47	31	type B pancreatic cell	0.06430155210643015
+Cluster4-56	22	microglial cell	0.005006827492034593
+Cluster3-68	16	microglial cell	0.0034129692832764505
+Cluster1-21	12	endothelial cell	0.002522935779816514
+Cluster4-57	11	macrophage	0.002268041237113402
+Cluster5-48	6	microglial cell	0.0013654984069185253
