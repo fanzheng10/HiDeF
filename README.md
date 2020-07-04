@@ -35,7 +35,7 @@ Using the codes in this repository, HiDeF can be used as a command-line tool. Th
 
 To sweep the resolution profile and generate an optimized hierarchy based on pan-resolution community persistence, run the following command in a terminal: 
 
-`python finder.py --g $graph --n $n --o $out [--options]`
+`python finder.py --g $graph --maxres $n --o $out [--options]`
 
 - `$graph`: a tab delimited file with 2-3 columns: nodeA, nodeB, weight (optional).
 - `$maxres`: the upper limit of the sampled range of the resolution parameter.
