@@ -30,12 +30,12 @@ By using this option, users can leverage the computing power of [National Resour
 
 ### Running HiDeF as a command-line tool (Recommended for big input networks)
 
-Using the codes in this repository, HiDeF can be used as a command-line tool. There are two main components of the scripts: `finder.py` and `weaver.py`.
+Using the codes in this repository, HiDeF can be used as a command-line tool. There are two main components of the scripts: `hidef_finder.py` and `weaver.py`.
 
 
 To sweep the resolution profile and generate an optimized hierarchy based on pan-resolution community persistence, run the following command in a terminal: 
 
-`python finder.py --g $graph --maxres $n --o $out [--options]`
+`python hidef_finder.py --g $graph --maxres $n --o $out [--options]`
 
 - `$graph`: a tab delimited file with 2-3 columns: nodeA, nodeB, weight (optional).
 - `$maxres`: the upper limit of the sampled range of the resolution parameter.
