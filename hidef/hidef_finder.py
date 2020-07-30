@@ -121,16 +121,6 @@ class ClusterGraph(nx.Graph): # inherit networkx digraph
                 nodes_to_remove.append(i)
         self.remove_nodes_from(nodes_to_remove)
 
-    # def update_padding(self, newly_padded_resolution):
-    #     '''
-    #     deprecated
-    #     :param newly_padded_resolution:
-    #     :return:
-    #     '''
-    #     for i, c in self.nodes.items():
-    #         clust = self.nodes[i]['data']
-    #         if clust.resolution_parameter in newly_padded_resolution:
-    #             clust.padded = True
 
 def jaccard_matrix(matA, matB, threshold=0.75, prefilter = False): # assume matA, matB are sorted
     '''
@@ -252,19 +242,6 @@ def update_resolution_graph(G, new_resolution, partition, value, neighborhood_si
                 newly_padded.append(v)
             G.nodes[v]['padded'] = True
     return newly_padded
-
-# def ensure_monotonicity(bisect_values, new_res):
-#     # First check if this partition improves on any other partition
-#     for res, bisect_part in bisect_values.iteritems():
-#         if bisect_values[new_res].partition.quality(res) > bisect_part.partition.quality(res):
-#             bisect_values[res] = bisect_values[new_res]
-#     # Then check what is best partition for the new_res
-#     current_quality = bisect_values[new_res].partition.quality(new_res)
-#     best_res = new_res
-#     for res, bisect_part in bisect_values.iteritems():
-#         if bisect_part.partition.quality(new_res) > current_quality:
-#             best_res = new_res
-#     bisect_values[new_res] = bisect_values[best_res]
 
 def collapse_cluster_graph(cluG, components, threshold=100):
     '''
@@ -514,20 +491,6 @@ def output_edges(weaver, G, out, leaf = False):
 
 def output_gml(out):
 
-    # dict_node_size = {n :weaver.node_size(n) for n in weaver.hier.nodes()}
-    # nx.set_node_attributes(weaver.hier, dict_node_size, 'size')
-    #
-    # # remove all leaf nodes
-    # Gout = weaver.hier.copy()
-    # # nodes_to_remove = [n for n in Gout.nodes() if not isinstance(n, tuple)]
-    # # Gout.remove_nodes_from(nodes_to_remove)
-    #
-    # # relabel nodes (tuple not compatible)
-    # mapping = {n: str(n) for n in Gout.nodes()}
-    # Gout = nx.relabel_nodes(Gout, mapping, copy=False)
-    #
-    # nx.write_gml(Gout, out +".gml")
-
     df_node = pd.read_csv(out + '.nodes', sep='\t', index_col=0, header=None)
     df_edge = pd.read_csv(out + '.edges', sep='\t', header=None)
     df_node.columns = ['Size', 'MemberList', 'Stability']
@@ -538,6 +501,8 @@ def output_gml(out):
         dic = df_node[c].to_dict()
         nx.set_node_attributes(G, dic, c)
     nx.write_gml(G, out +'.gml')
+
+
 
 if __name__ == '__main__':
     par = argparse.ArgumentParser()
@@ -597,5 +562,3 @@ if __name__ == '__main__':
     output_edges(weaver, G, args.o)
     if args.skipgml is False:
         output_gml(args.o)
-
-
