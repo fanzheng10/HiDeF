@@ -1,6 +1,6 @@
 # HiDeF (Hierarchical community Decoding Framework)
 
-![Figure](fig1.png)
+![Figure](fig1.png | width=48)
 
 ## Introduction
 
