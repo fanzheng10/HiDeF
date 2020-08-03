@@ -4,8 +4,9 @@
 
 ## Introduction
 
-HiDeF is an analysis framework to robustly resolve the hierarchical structures of networks based on multiscale community detection and the concepts of persistent homology. It is a collaboration between teams at UC San Diego and the University of Pittsburgh. It is associated with the following manuscript:
+HiDeF is an analysis framework to robustly resolve the hierarchical structures of networks based on multiscale community detection and the concepts of persistent homology. 
 
+HiDeF is described in the following manuscript:  
 Fan Zheng, She Zhang, Christopher Churas, Dexter Pratt, Ivet Bahar, Trey Ideker. Submitted (2020) [Preprint](https://doi.org/10.1101/2020.06.16.151555)
 
 ## Dependencies
@@ -18,6 +19,8 @@ numpy
 scipy  
 pandas
 
+## Installation
+`python setup.py install`
 
 ## Usage
 
