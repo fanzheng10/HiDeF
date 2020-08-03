@@ -1,6 +1,6 @@
 # HiDeF (Hierarchical community Decoding Framework)
 
-![Figure](fig1.png){:height="50%"}
+<img src="https://github.com/fanzheng10/HiDeF/blob/master/fig1.png" width="600">
 
 ## Introduction
 
