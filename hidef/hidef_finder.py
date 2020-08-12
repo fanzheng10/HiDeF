@@ -178,7 +178,7 @@ def run_alg(G, alg, gamma=1.0):
         partition = louvain.find_partition(G, partition_type, resolution_parameter=gamma)
     elif alg == 'leiden':
         partition_type = leidenalg.RBConfigurationVertexPartition
-        partition = leidenalg.RBConfigurationVertexPartition(G, partition_type, resolution_parameter=gamma)
+        partition = leidenalg.find_partition(G, partition_type, resolution_parameter=gamma)
     # partition = sorted(partition, key=len, reverse=True)
     return partition
 
