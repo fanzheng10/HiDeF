@@ -555,7 +555,7 @@ if __name__ == '__main__':
                      merge=True, cutoff=args.t) #
 
     names = [G.vs[i]['name'] for i in range(len(G.vs))]
-    output_nodes(weaver, G, args.o, len_component)
-    output_edges(weaver, G, args.o)
+    output_nodes(weaver, names, args.o, len_component)
+    output_edges(weaver, names, args.o)
     if args.skipgml is False:
         output_gml(args.o)
