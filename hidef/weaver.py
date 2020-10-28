@@ -16,11 +16,8 @@ internals = lambda T: (node for node in T if istuple(node))
 RECURSION_MAX_DEPTH = int(10e6)
 
 class Weaver(object):
-    """
-    Class for constructing a hierarchical representation of a graph 
-    based on (a list of) input partitions. 
-
-    """
+    """Class for constructing a hierarchical representation of a graph
+    based on (a list of) input partitions. """
 
     __slots__ = ['_assignment', '_terminals', 'assume_levels', 'hier', '_levels', '_labels',
                  '_full', '_secondary']
@@ -113,7 +110,7 @@ class Weaver(object):
             if T.nodes[node]['level'] == level:
                 return node
 
-    def weave(self, partitions, terminals=None, boolean=False, levels=False, **kwargs):
+    def weave(self, partitions, terminals=None, boolean=False, levels=False, **kwargs): #  TODO: weaver can be better structured
         """Finds a directed acyclic graph that represents a hierarchy recovered from 
         partitions.
 
@@ -292,7 +289,7 @@ class Weaver(object):
         # remove loops
         if merge:
 
-            def _collapse_nodes(G, vs):
+            def _collapse_nodes(G, vs): # TODO: merge should update persistence
                 all_in_nodes, all_out_nodes = [], []
                 vs = list(vs)
                 vs = sorted(vs, key = lambda x:G.nodes[x]['index'])
@@ -431,7 +428,7 @@ class Weaver(object):
 
         # update node assignments
         LOGGER.timeit('_update')
-        LOGGER.info('propagate terminal node assignments upward in the hierarchy')
+        LOGGER.info('propagate terminal node assignments upward in the hierarchy') # TODO: this can be iterated until there's no change
         L_sp = sp.sparse.csr_matrix(L.T)
 
         ## construct a community connectivity matrix
@@ -873,24 +870,24 @@ def containment_indices_boolean(A, B):
     CI = overlap / count[:, None]
     return CI
 
-def containment_indices_sparse(A, B, sparse=False):
-    '''
-    calculate containment index for all clusters in A in all clusters in B
-    :param A: a numpy matrix, axis 0 - cluster; axis 1 - nodes
-    :param B: a numpy matrix, axis 0 - cluster; axis 1 - nodes
-    :return: a sparse matrix with containment index; calling row/column/data for individual pairs
-    '''
-    if not sparse:
-        Asp = sp.sparse.csr_matrix(A)
-        Bsp = sp.sparse.csr_matrix(B)
-    else:
-        Asp = A
-        Bsp = B
-    both = np.asarray(np.sum(Asp.multiply(Bsp), axis=1)).ravel()
-    countA =  Asp.getnnz(axis=1) # this is dense matrix
-    contain = 1.0 * both/countA
-    # print(both, countA, contain)
-    return contain
+# def containment_indices_sparse(A, B, sparse=False):
+#     '''
+#     calculate containment index for all clusters in A in all clusters in B
+#     :param A: a numpy matrix, axis 0 - cluster; axis 1 - nodes
+#     :param B: a numpy matrix, axis 0 - cluster; axis 1 - nodes
+#     :return: a sparse matrix with containment index; calling row/column/data for individual pairs
+#     '''
+#     if not sparse:
+#         Asp = sp.sparse.csr_matrix(A)
+#         Bsp = sp.sparse.csr_matrix(B)
+#     else:
+#         Asp = A
+#         Bsp = B
+#     both = np.asarray(np.sum(Asp.multiply(Bsp), axis=1)).ravel()
+#     countA =  Asp.getnnz(axis=1) # this is dense matrix
+#     contain = 1.0 * both/countA
+#     # print(both, countA, contain)
+#     return contain
 
 def all_equal(iterable):
     "Returns True if all the elements are equal to each other"

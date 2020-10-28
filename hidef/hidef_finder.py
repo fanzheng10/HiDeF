@@ -433,7 +433,7 @@ def consensus(cluG, k=5,  f=1.0, ct=100):
 
     return cluG_collapsed_w_len
 
-def output_nodes(weaver, G, out, len_component):
+def output_nodes(weaver, names, out, len_component=None): #TODO: make len_component an optional
     # internals = lambda T: (node for node in T if isinstance(node, tuple))
     weaver_clusts = []
     for v, vdata in weaver.hier.nodes(data=True):
@@ -441,30 +441,26 @@ def output_nodes(weaver, G, out, len_component):
             continue
         ind = vdata['index']
         name = 'Cluster{}-{}'.format(str(v[0]), str(v[1]))
-        weaver_clusts.append([name, weaver._assignment[ind], len_component[ind]])
+        if len_component != None:
+            weaver_clusts.append([name, weaver._assignment[ind], len_component[ind]])
+        else:
+            weaver_clusts.append([name, weaver._assignment[ind]])
     weaver_clusts = sorted(weaver_clusts, key=lambda x: np.sum(x[1]), reverse=True)
-    # TODO: in this output, the gene assignment has not been propagated. so it is possible that children genes are not in parent gene
+
     with open(out + '.nodes', 'w') as fh:
-        # write parameter setting first
-        # fh.write('# -f {}\n'.format(args.f))
-        # fh.write('# -n {}\n'.format(args.n))
-        # fh.write('# -t {}\n'.format(args.t))
-        # fh.write('# -k {}\n'.format(args.k))
-        # fh.write('# -j {}\n'.format(args.j))
-        # fh.write('# -s {}\n'.format(args.s))
-        # fh.write('# -ct {}\n'.format(args.ct))
-        # fh.write('# -minres {}\n'.format(args.minres))
-        # fh.write('# -maxres {}\n'.format(args.maxres))
 
         for ci in range(len(weaver_clusts)):
             cn = weaver_clusts[ci][0]
             cc = weaver_clusts[ci][1]
-            cl = weaver_clusts[ci][2]
-            fh.write(cn + '\t' + str(np.sum(cc)) + '\t' +
-                     ' '.join(sorted([G.vs[x]['name'] for x in np.where(cc)[0] ])) + '\t' + str(cl) + '\n')
+            if len_component != None:
+                cl = weaver_clusts[ci][2]
+                fh.write(cn + '\t' + str(np.sum(cc)) + '\t' + ' '.join(sorted([names[x] for x in np.where(cc)[0] ])) + '\t' + str(cl) + '\n')
+            else:
+                fh.write(cn + '\t' + str(np.sum(cc)) + '\t' + ' '.join(
+                    sorted([names[x] for x in np.where(cc)[0]])) + '\n')
     return
 
-def output_edges(weaver, G, out, leaf = False):
+def output_edges(weaver, names, out, leaf = False):
     '''
     
     :param weaver: 
@@ -483,7 +479,7 @@ def output_edges(weaver, G, out, leaf = False):
                 outstr = '{}\t{}\tdefault\n'.format(parent, child)
                 fh.write(outstr)
             else:
-                child = G.vs[e[1]]['name']
+                child = names[e[1]]
                 if leaf:
                     outstr = '{}\t{}\tgene\n'.format(parent, child)
                     fh.write(outstr)
@@ -510,8 +506,8 @@ if __name__ == '__main__':
     par.add_argument('--minres', type=float, default=0.001, help='Minimum resolution parameter') # cdaps not-expose
     par.add_argument('--maxres', type=float, default=50.0, help='Maximum resolution parameter. Increase to get more smaller communities.') # Maximum resolution parameter
     par.add_argument('--n', type=int, help= 'Target community number. Explore the maximum resolution parameter until the number of generated communities at this resolution is close enough to this value. Increase to get more smaller communities.') # Target community number
-    par.add_argument('--t', type=float, default=0.1, help='Sampling density. Inversed density of sampling the resolution parameter. Decrease to introduce more transient communities (will increase running time)') # cdaps not-expose
-    par.add_argument('--j', type=float, default=0.75, help='Similarity/containment threshold. A cutoff for creating the community ensemble graph and the containment graph') # cdaps not-expose
+    par.add_argument('--d', type=float, default=0.1, help='Sampling density. Inversed density of sampling the resolution parameter. Decrease to introduce more transient communities (will increase running time)') # cdaps not-expose
+    par.add_argument('--t', type=float, default=0.75, help='Similarity/containment threshold. A cutoff for creating the community ensemble graph and the containment graph') # cdaps not-expose
     par.add_argument('--k', type=int, default = 5, help='Persistence threshold. Increase to delete unstable clusters, and get fewer communities') # Persistent threshold.
     par.add_argument('--s', type=float, default=1.0, help='A subsample parameter') # cdaps not-expose
     par.add_argument('--ct', default=75, type=int, help='Consensus threshold. Threshold of collapsing community graph and choose genes for each community.') # Consensus threshold.
@@ -530,8 +526,8 @@ if __name__ == '__main__':
     # explore the resolution parameter given the number of clusters
 
     cluG = run(G,
-               density=args.t,
-               jaccard=args.j,
+               density=args.d,
+               jaccard=args.t,
                sample=args.s,
                minres=args.minres,
                maxres=args.maxres,
@@ -556,8 +552,9 @@ if __name__ == '__main__':
 
     weaver = weaver.Weaver()
     T = weaver.weave(cluG_collapsed, boolean=True, assume_levels=False,
-                     merge=True, cutoff=args.j) #
+                     merge=True, cutoff=args.t) #
 
+    names = [G.vs[i]['name'] for i in range(len(G.vs))]
     output_nodes(weaver, G, args.o, len_component)
     output_edges(weaver, G, args.o)
     if args.skipgml is False:
