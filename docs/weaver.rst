@@ -1,8 +1,6 @@
 weaver module
-======
-.. automodule:: weaver
+=============
 
-Weaver class
-------
-.. autoclass:: Weaver
+.. automodule:: weaver
+    :members:
 

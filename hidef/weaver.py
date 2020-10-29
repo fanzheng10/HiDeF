@@ -8,7 +8,7 @@ from sys import getrecursionlimit, setrecursionlimit
 
 from hidef import LOGGER
 
-__all__ = ['Weaver', 'weave']
+# __all__ = ['Weaver', 'weave'] # this prevent from loading other
 
 istuple = lambda n: isinstance(n, tuple)
 isdummy = lambda n: None in n
@@ -58,6 +58,10 @@ class Weaver(object):
                           doc='terminals nodes')
 
     def get_assignment(self):
+        '''
+
+        :return:
+        '''
         return self._assignment
 
     assignment = property(get_assignment, doc='assignment matrix')
@@ -812,6 +816,8 @@ class Weaver(object):
             nx.write_edgelist(G, f, delimiter='\t', data=['type'])
 
 
+# TODO: functions like below can be moved to a utils file
+
 def containment_indices_legacy(A, B):
     from collections import defaultdict
 
@@ -861,6 +867,12 @@ def containment_indices(A, B):
     return CI, LA, LB
 
 def containment_indices_boolean(A, B):
+    '''
+
+    :param A:
+    :param B:
+    :return:
+    '''
     count = np.count_nonzero(A, axis=1)
 
     A = A.astype(float)
@@ -870,27 +882,9 @@ def containment_indices_boolean(A, B):
     CI = overlap / count[:, None]
     return CI
 
-# def containment_indices_sparse(A, B, sparse=False):
-#     '''
-#     calculate containment index for all clusters in A in all clusters in B
-#     :param A: a numpy matrix, axis 0 - cluster; axis 1 - nodes
-#     :param B: a numpy matrix, axis 0 - cluster; axis 1 - nodes
-#     :return: a sparse matrix with containment index; calling row/column/data for individual pairs
-#     '''
-#     if not sparse:
-#         Asp = sp.sparse.csr_matrix(A)
-#         Bsp = sp.sparse.csr_matrix(B)
-#     else:
-#         Asp = A
-#         Bsp = B
-#     both = np.asarray(np.sum(Asp.multiply(Bsp), axis=1)).ravel()
-#     countA =  Asp.getnnz(axis=1) # this is dense matrix
-#     contain = 1.0 * both/countA
-#     # print(both, countA, contain)
-#     return contain
 
 def all_equal(iterable):
-    "Returns True if all the elements are equal to each other"
+    #Returns True if all the elements are equal to each other
 
     from itertools import groupby
 
@@ -898,7 +892,7 @@ def all_equal(iterable):
     return next(g, True) and not next(g, False)
 
 def boolize(x):
-    "Converts x to boolean"
+    #Converts x to boolean
 
     if not isinstance(x, bool):
         x = bool(int(x))
@@ -952,8 +946,12 @@ def get_root(T):
     return None
 
 def prune(T):
-    """Removes the nodes with only one child and the nodes that have no terminal 
-    nodes (e.g. genes) as descendants. (This basically removes identical clusters)"""
+    '''
+    Removes the nodes with only one child and the nodes that have no terminal
+    nodes (e.g. genes) as descendants. (This basically removes identical clusters)
+    :param T:
+    :return:
+    '''
 
     # prune tree
     # remove dead-ends

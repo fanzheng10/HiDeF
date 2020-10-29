@@ -1,4 +1,5 @@
 hidef_finder module
-======
+===================
 
-.. autoclass:: hidef_finder.Cluster
+.. automodule:: hidef_finder
+    :members:

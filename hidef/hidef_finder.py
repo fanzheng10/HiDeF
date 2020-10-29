@@ -17,19 +17,24 @@ from hidef import LOGGER
 
 
 class Cluster(object):
+    """
+    The base class representing a cluster in hidef.
+
+    Parameters
+    ----------
+    binary : np.array
+        a binary vector indicating which objects belong to this cluster
+    gamma : float
+        the resolution parameter which generated this cluster
+    """
+
     __slots__ = ['size',
                  'members',
                  'binary',
                  'padded',
                  'resolution_parameter']
 
-    def __init__(self, binary, length, gamma):
-        '''initialize
-        member: a list of member index (start from 0)
-        size: number of cluster member
-        length:  
-        gamma: resolution parameter
-         '''
+    def __init__(self, binary, gamma):
         self.binary = np.squeeze(np.asarray(binary.todense()))
         self.members = np.where(self.binary)[0]
         self.size = len(self.members)
@@ -40,9 +45,15 @@ class Cluster(object):
 
     def calculate_similarity(self, cluster2):
         '''
-        calculate Jaccard similarity.
-        :param cluster2: another Cluster object
-        :return: 
+        calculate the Jaccard similarity between two clusters
+
+        Parameters
+        ----------
+        cluster2 : hidef_finder.Cluster
+
+        Returns
+        ----------
+        : float
         '''
         # jaccard index
         arr1, arr2 = self.binary, cluster2.binary
@@ -52,15 +63,20 @@ class Cluster(object):
 
 class ClusterGraph(nx.Graph): # inherit networkx digraph
     '''
-    Extending nx.Graph class, each node is a Cluster object
+    Extending nx.Graph class, each node is a hidef_finder.Cluster object
     '''
 
     def add_clusters(self, resolution_graph, new_resolution):
         '''
         Add new clusters to cluster graph once a new resolution is finished by the CD algorithm
-        :param resolution_graph: another nx.Graph object 
-        :param new_resolution: the resolution just visited by the CD algorithm
-        :return: 
+
+        Parameters
+        ----------
+        resolution_graph: another nx.Graph object
+        new_resolution: the resolution just visited by the CD algorithm
+
+        Returns
+        ----------
         '''
         resname_new = '{:.4f}'.format(new_resolution)
         new_clusters = []
@@ -105,73 +121,56 @@ class ClusterGraph(nx.Graph): # inherit networkx digraph
             self.nodes[ni]['data'] = nc # is it a pointer?
             # self.nodes[ni]['data'].index = ni
 
-    def remove_clusters(self, k, coherence=0.5):
-        '''
-        deprecated
-        :param k: 
-        :param coherence: 
-        :return: 
-        '''
-        # find a k-core of the cluster graph
-        nodes_to_remove = []
-        core_numbers = nx.core_number(self)
-        for i, v in core_numbers.items():
-            clust = self.nodes[i]['data']
-            if clust.padded and v < coherence*k:
-                nodes_to_remove.append(i)
-        self.remove_nodes_from(nodes_to_remove)
 
-
-def jaccard_matrix(matA, matB, threshold=0.75, prefilter = False): # assume matA, matB are sorted
+def jaccard_matrix(matA, matB, threshold=0.75, return_mat=False): # assume matA, matB are sorted
     '''
-    calculate jaccard matrix between all pairs between two sets of clusters
-    :param matA: scipy.sparse.csr_matrix, axis 0 for clusters, axis 1 for nodes in network
-    :param matB: similar to matA; cluster set under a different resolution parameter
-    :param threshold: a Jaccard similarity cutoff
-    :param prefilter: pre-filter the pairs to compare with a lower bound (didn't seem to speed up much)
-    :return: two sets of indices; the cluster pairs implied by those indices satisfied threshold
-    '''
-    if prefilter: # does not have much speed advantage
-        sizeA = np.ravel(np.asarray(np.sum(matA, axis=1)))
-        sizeB = np.ravel(np.asarray(np.sum(matB, axis=1)))
-        idA, idB = [], []
-        for i in range(len(sizeA)):
-            for j in range(len(sizeB)):
-                if 1.0 * min(sizeA[i], sizeB[j])/max(sizeA[i], sizeB[j]) < threshold:
-                    continue
-                else:
-                    idA.append(i)
-                    idB.append(j)
-        if len(idA) > 0:
-            idA = np.array(idA)
-            idB = np.array(idB)
-            # print(idA, idB)
-            matAs, matBs = matA[idA, :], matB[idB, :]
-            both = np.sum(matAs.multiply(matBs), axis=1).ravel()
-            either = matAs.getnnz(axis=1) + matBs.getnnz(axis=1) - both
-            # print(both.shape, matAs.getnnz(axis=1).shape,matBs.getnnz(axis=1).shape, np.min(either))
-            jac = 1.0*both/either
-            small_index = np.where(jac > threshold)
-            # print(small_index)
-            real_index = (idA[small_index[1]], idB[small_index[1]])
-            return real_index
-        else:
-            return ([], [])
-    else:
-        both = matA.dot(matB.T)
+    Calculate jaccard matrix between all pairs between two sets of clusters.
 
-        either = (np.tile(matA.getnnz(axis=1), (matB.shape[0],1)) + matB.getnnz(axis=1)[:, np.newaxis]).T -both
-        jac = 1.0*both/either
-        index = np.where(jac > threshold)
+    Parameters
+    ----------
+    matA : scipy.sparse.csr_matrix
+        axis 0 for clusters, axis 1 for nodes in network
+    matB : scipy.sparse.csr_matrix
+    threshold :
+        a similarity cutoff for Jaccard index
+    return_mat : bool
+        set to true will also return the full pairwise Jaccard matrix
+
+    Returns
+    -------
+    index : (np.array, np.array)
+        two sets of indices; the cluster pairs implied by those indices satisfied threshold
+    jac : np.array
+        a full matrix of pairwise Jaccard indices
+    '''
+    both = matA.dot(matB.T)
+
+    either = (np.tile(matA.getnnz(axis=1), (matB.shape[0],1)) + matB.getnnz(axis=1)[:, np.newaxis]).T -both
+    jac = 1.0*both/either
+    index = np.where(jac > threshold)
+    if not return_mat:
         return index
+    else:
+        return index, jac
 
 
 def run_alg(G, alg, gamma=1.0):
     '''
-    run community detection algorithm with resolution parameter. Right now only use RB in Louvain
-    :param G: an igraph graph
-    :param gamma: resolution parameter
-    :return: 
+    Run community detection algorithm with a resolution parameter. Right now only use RB in Louvain/Leiden
+
+    Parameters
+    ----------
+    G : igraph.Graph
+    alg : str
+        choose between 'louvain' and 'leiden'
+    gamma : float
+        resolution parameter
+
+    Returns
+    ------
+    partition : louvain.VertexPartition.MutableVertexPartition
+        The parition object in Louvain or Leiden packages
+
     '''
     if alg =='louvain':
         partition_type = louvain.RBConfigurationVertexPartition
@@ -185,8 +184,14 @@ def run_alg(G, alg, gamma=1.0):
 def network_perturb(G, sample=0.8):
     '''
     perturb the network by randomly deleting some edges
-    :param G: input network
-    :param sample: the fraction of edges to retain
+
+    Parameters
+    ----------
+    G: input network
+    sample: the fraction of edges to retain
+
+    Returns
+    ----------
     :return: the perturbed graph
     '''
     G1 = G.copy()
@@ -196,10 +201,14 @@ def network_perturb(G, sample=0.8):
 
 def partition_to_membership_matrix(partition, minsize=4):
     '''
-    
-    :param partition: class partition in the louvain-igraph package
-    :param minsize: minimum size of clusters; smaller clusters will be deleted afterwards 
-    :return: 
+
+    Parameters
+    ----------
+    partition: class partition in the louvain-igraph package
+    minsize: minimum size of clusters; smaller clusters will be deleted afterwards
+
+    Returns
+    ----------
     '''
     clusters = sorted([p for p in partition if len(p) >=minsize], key=len, reverse=True)
     row, col = [], []
@@ -217,13 +226,18 @@ def partition_to_membership_matrix(partition, minsize=4):
 def update_resolution_graph(G, new_resolution, partition, value, neighborhood_size, neighbor_density_threshold):
     '''
     Update the "resolution graph", which connect resolutions that are close enough
-    :param G: nx.Graph; the "resolution graph"
-    :param new_resolution: the resolution just visited by the CD algorithm 
-    :param partition: partition generated by 
-    :param value: deprecated
-    :param neighborhood_size: if two resolutions (log-scale) differs smaller than this value, they are called 'neighbors'
-    :param neighbor_density_threshold: if a resolution has neighbors more than this number, it is called "padded". No more sampling will happen between two padded resolutions
-    :return: 
+
+    Parameters
+    ----------
+    G: nx.Graph; the "resolution graph"
+    new_resolution: the resolution just visited by the CD algorithm
+    partition: partition generated by
+    value: deprecated
+    neighborhood_size: if two resolutions (log-scale) differs smaller than this value, they are called 'neighbors'
+    neighbor_density_threshold: if a resolution has neighbors more than this number, it is called "padded". No more sampling will happen between two padded resolutions
+
+    Returns
+    ----------
     '''
     nodename = '{:.4f}'.format(new_resolution)
     membership = partition_to_membership_matrix(partition)
@@ -245,10 +259,17 @@ def update_resolution_graph(G, new_resolution, partition, value, neighborhood_si
 
 def collapse_cluster_graph(cluG, components, threshold=100):
     '''
+
     take the cluster graph and collapse each component based on some consensus metric
-    :param cluG: the ClusterGraph object
-    :param components: a list of list, each element of the inner list is a binary membership array
-    :param threshold: t; remove nodes if they did not appear in more than t percent of clusters in one component 
+
+    Parameters
+    ----------
+    cluG: the ClusterGraph object
+    components: a list of list, each element of the inner list is a binary membership array
+    threshold: t; remove nodes if they did not appear in more than t percent of clusters in one component
+
+    Returns
+    ----------
     '''
     collapsed_clusters = []
     for component in components:
@@ -273,16 +294,21 @@ def run(G,
     # other default parameters
     '''
     Main function to run the Finder program
-    :param G: input network
-    :param density: inversed density of sampling resolution parameter. Use a smaller value to increase sample density (will increase running time)
-    :param neighbors: also affect sampling density; a larger value may have additional benefits of stabilizing clustering results
-    :param jaccard: a cutoff to call two clusters similar
-    :param sample: parameter to perturb input network in each run by deleting edges; lower values delete more
-    :param minres: minimum resolution parameter
-    :param maxres: maximum resolution parameter
-    :param maxn: will explore resolution parameter until cluster number is similar to this number; will override 'maxres'
-    :param bisect: if set to True, if solutions between two resolutions look similar, halt sampling in between. Could reduce stability a little
-    :return: 
+
+    Parameters
+    ----------
+    G: input network
+    density: inversed density of sampling resolution parameter. Use a smaller value to increase sample density (will increase running time)
+    neighbors: also affect sampling density; a larger value may have additional benefits of stabilizing clustering results
+    jaccard: a cutoff to call two clusters similar
+    sample: parameter to perturb input network in each run by deleting edges; lower values delete more
+    minres: minimum resolution parameter
+    maxres: maximum resolution parameter
+    maxn: will explore resolution parameter until cluster number is similar to this number; will override 'maxres'
+    bisect: if set to True, if solutions between two resolutions look similar, halt sampling in between. Could reduce stability a little
+
+    Returns
+    ----------
     '''
     min_diff_bisect_value = 1
     min_diff_resolution = 0.001
@@ -387,11 +413,16 @@ def run(G,
 def consensus(cluG, k=5,  f=1.0, ct=100):
     '''
     create a more parsimonious results from the cluster graph
-    :param cluG: the cluster graph
-    :param k: delete clusters with lower degree
-    :param f: take this fraction of clusters (ordered by degree in cluster graph)
-    :param ct: nodes that do not participate in the majority of clusters in a component will be removed
-    :return: 
+
+    Parameters
+    ----------
+    cluG: the cluster graph
+    k: delete clusters with lower degree
+    f: take this fraction of clusters (ordered by degree in cluster graph)
+    ct: nodes that do not participate in the majority of clusters in a component will be removed
+
+    Returns
+    ----------
     '''
 
     components = [c for c in nx.connected_components(cluG) if len(c)>= k]
@@ -433,7 +464,20 @@ def consensus(cluG, k=5,  f=1.0, ct=100):
 
     return cluG_collapsed_w_len
 
+
 def output_nodes(weaver, names, out, len_component=None): #TODO: make len_component an optional
+    '''
+
+    Parameters
+    ----------
+    weaver:
+    names:
+    out:
+    len_component:
+
+    Returns
+    ----------
+    '''
     # internals = lambda T: (node for node in T if isinstance(node, tuple))
     weaver_clusts = []
     for v, vdata in weaver.hier.nodes(data=True):
@@ -462,12 +506,16 @@ def output_nodes(weaver, names, out, len_component=None): #TODO: make len_compon
 
 def output_edges(weaver, names, out, leaf = False):
     '''
-    
-    :param weaver: 
-    :param G: 
-    :param out: 
-    :param leaf: 
-    :return: 
+
+    Parameters
+    ----------
+    weaver:
+    G:
+    out:
+    leaf:
+
+    Returns
+    ----------
     '''
     # note this output is the 'forward' state
     # right now do not support node names as tuples
@@ -486,7 +534,15 @@ def output_edges(weaver, names, out, leaf = False):
 
 
 def output_gml(out):
+    '''
 
+    Parameters
+    ----------
+    out:
+
+    Returns
+    ----------
+    '''
     df_node = pd.read_csv(out + '.nodes', sep='\t', index_col=0, header=None)
     df_edge = pd.read_csv(out + '.edges', sep='\t', header=None)
     df_node.columns = ['Size', 'MemberList', 'Stability']
