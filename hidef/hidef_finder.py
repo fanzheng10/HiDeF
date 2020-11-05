@@ -83,7 +83,7 @@ class ClusterGraph(nx.Graph): # inherit networkx digraph
         new_mat = resolution_graph.nodes[resname_new]['matrix']
 
         for i in range(new_mat.shape[0]): # c is a list of node indices
-            clu = Cluster(new_mat[i, :], self.graph['num_leaves'], new_resolution)
+            clu = Cluster(new_mat[i, :], new_resolution)
             # cluG.add_cluster(clu)
             new_clusters.append(clu)
 
