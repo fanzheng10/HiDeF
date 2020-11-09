@@ -8,7 +8,7 @@ from sys import getrecursionlimit, setrecursionlimit
 
 from hidef import LOGGER
 
-# __all__ = ['Weaver', 'weave'] # this prevent from loading other
+__all__ = ['Weaver', 'weave'] # this prevent from loading other
 
 istuple = lambda n: isinstance(n, tuple)
 isdummy = lambda n: None in n
@@ -58,10 +58,6 @@ class Weaver(object):
                           doc='terminals nodes')
 
     def get_assignment(self):
-        '''
-
-        :return:
-        '''
         return self._assignment
 
     assignment = property(get_assignment, doc='assignment matrix')
@@ -86,7 +82,7 @@ class Weaver(object):
         return mapping
 
     def get_levels(self):
-        """Returns the levels (ordered ascendingly) in the hierarchy."""
+        # """Returns the levels (ordered ascendingly) in the hierarchy."""
 
         if self.hier is None:
             raise ValueError('hierarchy not built. Call weave() first')
@@ -103,7 +99,7 @@ class Weaver(object):
         return levels
 
     def some_node(self, level):
-        """Returns the first node that is associated with the partition specified by level."""
+        # """Returns the first node that is associated with the partition specified by level."""
 
         if self.hier is None:
             raise ValueError('hierarchy not built. Call weave() first')
@@ -143,9 +139,8 @@ class Weaver(object):
             set to True, only the clusters labelled as True will be considered 
             as a parent in the hierarchy.
         
-        merge: keyword argument, optional (default=False)
+        merge : keyword argument, optional (default=False)
             whether merge similar clusters. if one cluster is contained in another cluster (determined by "cutoff" oarameter) and vice versa, these two clusters deemed to be very similar. if set to true, such clusters groups will be merged into one (take union)
-        
         
         top : keyword argument (0 ~ 100, default=100)
             top x percent (alternative) edges to be kept in the hierarchy. This parameter 
@@ -153,13 +148,8 @@ class Weaver(object):
             edges. Note that if top=0 then each node will only have exactly one parent 
             (except for the root which has none). 
 
-        cutoff : keyword argument (0.5 ~ 1.0, default=0.8)
-            containment index cutoff for claiming parenthood. c
-
-        See Also
-        --------
-        build
-        pick
+        cutoff : keyword argument (0.5 ~ 1.0, default=0.75)
+            containment index cutoff for claiming parenthood.
 
         Returns
         -------
@@ -233,8 +223,9 @@ class Weaver(object):
 
         Parameters
         ----------
-        cutoff : keyword argument (0.5 ~ 1.0, default=0.8)
-            containment index cutoff for claiming parenthood. 
+        cutoff : keyword argument (0.5 ~ 1.0, default=0.75)
+            containment index cutoff for claiming parenthood.
+        merge : bool
 
         Returns
         -------
@@ -242,7 +233,7 @@ class Weaver(object):
             
         """
 
-        cutoff = kwargs.pop('cutoff', 0.8)
+        cutoff = kwargs.pop('cutoff', 0.75)
         merge = kwargs.pop('merge', False)
 
         assume_levels = self.assume_levels
@@ -277,7 +268,6 @@ class Weaver(object):
             if not G.has_node(nb):
                 G.add_node(nb, index=j, level=levels[j], label=labels[j])
 
-            # TODO: hope to collapse bi-directional edges
             if C >= cutoff:
                 if not merge:
                     if G.has_edge(na, nb):
@@ -514,7 +504,7 @@ class Weaver(object):
 
         Parameters
         ----------
-        top : keyword argument (0 ~ 100, default=100)
+        top : int or float (0 ~ 100, default=100)
             top x percent (alternative) edges to be kept in the hierarchy. This parameter 
             controls the number of parents each node has based on a global ranking of the 
             edges. Note that if top=0 then each node will only have exactly one parent 
@@ -661,7 +651,7 @@ class Weaver(object):
         
         return show_hierarchy(T, nodelist=nodelist, **kwargs)
 
-    def node_cluster(self, node, out=None):
+    def node_cluster(self, node, out=None): # TODO: this is useful, but hope to test it
         """Recovers the cluster represented by a node in the hierarchy.
 
         Returns
@@ -784,9 +774,11 @@ class Weaver(object):
 
         Parameters
         ----------
-        filename : the path and name of the output file.
+        filename : str
+            the path and name of the output file.
 
-        format : output format. Available options are "ddot".
+        format : str
+            output format. Available options are "ddot".
             
         """
 
@@ -814,73 +806,6 @@ class Weaver(object):
         
         with open(filename, 'ab') as f:
             nx.write_edgelist(G, f, delimiter='\t', data=['type'])
-
-
-# TODO: functions like below can be moved to a utils file
-
-def containment_indices_legacy(A, B):
-    from collections import defaultdict
-
-    n = len(A)
-    counterA  = defaultdict(int)
-    counterB  = defaultdict(int)
-    counterAB = defaultdict(int)
-
-    for i in range(n):
-        a = A[i]; b = B[i]
-
-        counterA[a] += 1
-        counterB[b] += 1
-        counterAB[(a, b)] += 1
-
-    LA = [l for l in counterA]
-    LB = [l for l in counterB]
-
-    CI = np.zeros((len(LA), len(LB)))
-    for i, a in enumerate(LA):
-        for j, b in enumerate(LB):
-            CI[i, j] = counterAB[(a, b)] / counterA[a]
-
-    return CI, LA, LB
-
-def containment_indices(A, B):
-    from collections import defaultdict
-
-    A = np.asarray(A)
-    B = np.asarray(B)
-
-    LA = np.unique(A)
-    LB = np.unique(B)
-
-    bA = np.zeros((len(LA), len(A)))
-    for i, a in enumerate(LA):
-        bA[i] = A == a
-    
-    bB = np.zeros((len(LB), len(B)))
-    for i, b in enumerate(LB):
-        bB[i] = B == b
-
-    overlap = bA.dot(bB.T)
-    count = bA.sum(axis=1)
-    CI = overlap / count[:, None]
-
-    return CI, LA, LB
-
-def containment_indices_boolean(A, B):
-    '''
-
-    :param A:
-    :param B:
-    :return:
-    '''
-    count = np.count_nonzero(A, axis=1)
-
-    A = A.astype(float)
-    B = B.astype(float)
-    overlap = A.dot(B.T)
-    
-    CI = overlap / count[:, None]
-    return CI
 
 
 def all_equal(iterable):
@@ -949,8 +874,10 @@ def prune(T):
     '''
     Removes the nodes with only one child and the nodes that have no terminal
     nodes (e.g. genes) as descendants. (This basically removes identical clusters)
-    :param T:
-    :return:
+
+    Parameters
+    ----------
+    T: a weaver object
     '''
 
     # prune tree
@@ -1024,20 +951,20 @@ def traverse_topdown(T, mode='breadth'):
         yield node
 
 def stuff_dummies(hierarchy):
-    """Puts dummy nodes into the hierarchy. The dummy nodes are used 
-    in `show_hierarchy` when `assume_level` is True.
-
-    Returns
-    -------
-    T : networkx.DiGraph
-        An hierarchy with dummy nodes added.
-
-    Raises
-    ------
-    ValueError
-        If hierarchy has not been built.
-
-    """
+    # """Puts dummy nodes into the hierarchy. The dummy nodes are used
+    # in `show_hierarchy` when `assume_level` is True.
+    #
+    # Returns
+    # -------
+    # T : networkx.DiGraph
+    #     An hierarchy with dummy nodes added.
+    #
+    # Raises
+    # ------
+    # ValueError
+    #     If hierarchy has not been built.
+    #
+    # """
 
     T = hierarchy.copy()
 
@@ -1084,7 +1011,7 @@ def stuff_dummies(hierarchy):
     return T
 
 def show_hierarchy(T, **kwargs):
-    """Visualizes the hierarchy"""
+    """Visualizes the hierarchy in notebook"""
 
     from networkx.drawing.nx_pydot import write_dot, graphviz_layout
     from networkx import draw, get_edge_attributes, draw_networkx_edge_labels
@@ -1194,20 +1121,3 @@ def weave(partitions, terminals=None, **kwargs):
     weaver.weave(partitions, terminals, **kwargs)
 
     return weaver
-
-if __name__ == '__main__':
-    from pylab import *
-
-    P = ['11111111',
-         '11111100',
-         '00001111',
-         '11100000',
-         '00110000',
-         '00001100',
-         '00000011']
-    P = [list(p) for p in P]
-
-    nodes = 'ABCDEFGH'
-
-    w = Weaver()
-    T = w.weave(P, boolean=True, terminals=nodes, cutoff=0.9, top=10)

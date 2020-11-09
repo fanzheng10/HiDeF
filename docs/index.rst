@@ -11,5 +11,6 @@ Welcome to HiDeF's documentation!
    
    hidef_finder
    weaver
+   utils
 
 
