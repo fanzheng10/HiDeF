@@ -1,5 +1,5 @@
 hidef_finder module
 ===================
 
-.. automodule:: hidef_finder
+.. automodule:: hidef.hidef_finder
     :members:

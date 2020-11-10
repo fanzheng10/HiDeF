@@ -1,6 +1,6 @@
 weaver module
 =============
 
-.. automodule:: weaver
+.. automodule:: hidef.weaver
     :members:
 

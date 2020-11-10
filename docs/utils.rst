@@ -1,5 +1,5 @@
 utils module
 =============
 
-.. automodule:: utils
+.. automodule:: hidef.utils
     :members:
