@@ -561,19 +561,20 @@ def output_gml(out):
 
 if __name__ == '__main__':
     par = argparse.ArgumentParser()
-    par.add_argument('--g', required=True, help='A tab separated file for the input graph')
+    par.add_argument('--g', required=True, help='The input graph as a TSV file (no header)')
     par.add_argument('--minres', type=float, default=0.001, help='Minimum resolution parameter') # cdaps not-expose
     par.add_argument('--maxres', type=float, default=50.0, help='Maximum resolution parameter. Increase to get more smaller communities.') # Maximum resolution parameter
-    par.add_argument('--n', type=int, help= 'Target community number. Explore the maximum resolution parameter until the number of generated communities at this resolution is close enough to this value. Increase to get more smaller communities.') # Target community number
-    par.add_argument('--d', type=float, default=0.1, help='Sampling density. Inversed density of sampling the resolution parameter. Decrease to introduce more transient communities (will increase running time)') # cdaps not-expose
-    par.add_argument('--t', type=float, default=0.75, help='Similarity/containment threshold. A cutoff for creating the community ensemble graph and the containment graph') # cdaps not-expose
-    par.add_argument('--k', type=int, default = 5, help='Persistence threshold. Increase to delete unstable clusters, and get fewer communities') # Persistent threshold.
+    par.add_argument('--n', type=int, help= 'The target community number. Explore the maximum resolution parameter until the number of generated communities at this resolution is close enough to this value. Increase to get more smaller communities.') # Target community number
+    par.add_argument('--d', type=float, default=0.1, help='Inversed density of sampling the resolutions. Decrease to sample more resolutions and introduce more transient communities (will increase running time)') # cdaps not-expose
+    par.add_argument('--t', type=float, default=0.75, help='The tau parameter; the similarity/containment threshold. A cutoff for creating the community ensemble graph and the containment graph') # cdaps not-expose
+    par.add_argument('--k', type=int, default = 5, help='The chi parameter; Persistence threshold. Increase to delete unstable clusters and get fewer communities') # Persistent threshold.
     par.add_argument('--s', type=float, default=1.0, help='A subsample parameter') # cdaps not-expose
-    par.add_argument('--ct', default=75, type=int, help='Consensus threshold. Threshold of collapsing community graph and choose genes for each community.') # Consensus threshold.
+    par.add_argument('--p', default=75, type=int, help='The p parameter; the consensus threshold collapsing community graph and choose representative genes for each community ensemble') # Consensus threshold.
     par.add_argument('--o', required=True, help='output file in ddot format')
-    par.add_argument('--alg', default='louvain', choices=['louvain', 'leiden'], help='add the option to use leiden algorithm')
-    par.add_argument('--skipclug', action='store_true', help='If set, skips output of cluG file')
-    par.add_argument('--skipgml', action='store_true', help='If set, skips output of gml file')
+    par.add_argument('--alg', default='louvain', choices=['louvain', 'leiden'], help='accept louvain or leiden')
+    par.add_argument('--skipgml', action='store_true', help='If True, skips output of gml file')
+    par.add_argument('--keepclug', action='store_false', help='If True, output of cluG file')
+
 
     args = par.parse_args()
 
@@ -595,14 +596,14 @@ if __name__ == '__main__':
                )
     # # use weaver to organize them (due to the previous collapsed step, need to re-calculate containment index. This may be ok
     # components = sorted(nx.connected_components(cluG), key=len, reverse=True)
-    if args.skipclug is False:
+    if args.keepclug:
         filename = args.o + '.cluG'
         outfile = open(filename, 'wb')
         pickle.dump(cluG, outfile)
         outfile.close()
 
     LOGGER.timeit('_consensus')
-    cluG_collapsed_w_len = consensus(cluG, args.k, 1.0, args.ct) # have sorted by cluster size inside this function
+    cluG_collapsed_w_len = consensus(cluG, args.k, 1.0, args.p) # have sorted by cluster size inside this function
     cluG_collapsed = [x[0] for x in cluG_collapsed_w_len]
     len_component = [x[1] for x in cluG_collapsed_w_len]
     cluG_collapsed.insert(0, np.ones(len(cluG_collapsed[0]), ))

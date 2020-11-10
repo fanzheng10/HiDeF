@@ -6,9 +6,8 @@ import itertools
 from itertools import product as iproduct
 from sys import getrecursionlimit, setrecursionlimit
 
+from hidef.utils import *
 from hidef import LOGGER
-
-__all__ = ['Weaver', 'weave'] # this prevent from loading other
 
 istuple = lambda n: isinstance(n, tuple)
 isdummy = lambda n: None in n
@@ -1115,9 +1114,3 @@ def show_hierarchy(T, **kwargs):
         cid = fig.canvas.mpl_connect('button_press_event', _onclick)
 
     return T2, pos
-
-def weave(partitions, terminals=None, **kwargs):
-    weaver = Weaver()
-    weaver.weave(partitions, terminals, **kwargs)
-
-    return weaver

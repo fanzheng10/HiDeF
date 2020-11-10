@@ -1,4 +1,5 @@
-
+import numpy as np
+import pandas as pd
 
 def network_perturb(G, sample=0.8):
     '''
@@ -97,3 +98,35 @@ def containment_indices_boolean(A, B):
     CI = overlap / count[:, None]
     return CI
 
+def node2mat(f, g2ind, format='node'):
+    '''
+    convert a text file to binary matrix (input of weaver)
+
+    Parameters
+    ----------
+    f: str
+        the input file
+    g2ind: dict
+        a dictionary to index genes
+    format: str
+        accepted values are 'node' or 'clixo'
+    Returns
+    --------
+    mat: list of np.array
+        a list of array representing cluster membership
+    '''
+    n = len(g2ind)
+    df = pd.read_csv(f, sep='\t', header=None)
+    mat = []
+    for i, row in df.iterrows():
+        if format == 'node':
+            gs = row[2].split()
+        elif format == 'clixo':
+            gs = row[2].strip(',').split(',')
+        else:
+            raise ValueError('The format argument only accepts "node" or "clixo"')
+        gsi = np.array([g2ind[g] for g in gs])
+        arr = np.zeros(n,)
+        arr[gsi] = 1
+        mat.append(arr)
+    return mat
