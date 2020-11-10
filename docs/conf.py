@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath('../hidef'))
 
 project = 'HiDeF'
 copyright = '2018, sphinx-themes.org'
-author = 'Fan Zhneg, She Zhang'
+author = 'Fan Zheng, She Zhang'
 
 # The short X.Y version
 version = '1.1'
@@ -95,8 +95,8 @@ html_static_path = ['_static']
 # 'searchbox.html']``.
 #
 # html_sidebars = {}
-import sphinx_glpi_theme
+#import sphinx_glpi_theme
 
-html_theme = "glpi"
+#html_theme = "glpi"
 
-html_theme_path = sphinx_glpi_theme.get_html_themes_path()
+#html_theme_path = sphinx_glpi_theme.get_html_themes_path()
