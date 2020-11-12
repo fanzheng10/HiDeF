@@ -26,9 +26,9 @@ pandas
 
 ### Running HiDeF from Cytoscape (Recommended)
 
-HiDeF has been fully integrated with the [Cytoscape](https://cytoscape.org/) environment, via our recently released [Community Detection APplication and Service (CDAPS)](http://apps.cytoscape.org/apps/cycommunitydetection) framework. Documentations can be found in the link above.
+HiDeF has been fully integrated with the [Cytoscape](https://cytoscape.org/) environment, via our recently published [Community Detection APplication and Service (CDAPS)](https://doi.org/10.1371/journal.pcbi.1008239) framework. Documentations can be found in the link above.
 
-By using this option, users can leverage the computing power of [National Resources of Network Biology (NRNB)](https://nrnb.org/) for the HiDeF analysis, and enjoy other nice features provided in the CDAPS framework, including (1) interact with the source network to visualize the subnetwork of any detected community (2) perform gene set enrichment analysis (when the vertices of the source network are proteins/genes) (3) store and share the models via the [NDEx](http://www.ndexbio.org/) database.
+By using this option, users can leverage the computing power of [National Resources of Network Biology (NRNB)](https://nrnb.org/) for the HiDeF analysis, and other nice features provided in the CDAPS framework, including (1) interact with the source network to visualize the subnetwork of any detected community (2) perform gene set enrichment analysis (when the vertices of the source network are proteins/genes) (3) store and share the models via the [NDEx](http://www.ndexbio.org/) database.
 
 
 ### Running HiDeF as a command-line tool (Recommended for big input networks)
@@ -83,7 +83,7 @@ Then the hierarchical view can be obtained by
 ```
 >>> from hidef import weaver
 >>> weaver = Weaver(P, boolean=True, terminals=nodes, assume_levels=False)
->>> T = weaver.weave(cutoff=0.9, top=10)
+>>> T = weaver.weave(cutoff=0.9)
 ```
 
 The hierarchy is represented by a `networkx.DiGraph` object, which can be obtained by querying `T.hier`. `T` also contains a lot of useful functions for extracting useful information about the hierarchy. 

@@ -88,7 +88,7 @@ def containment_indices_boolean(A, B):
     --------
     CI: float
         the containment index
-    '''
+    '''`
     count = np.count_nonzero(A, axis=1)
 
     A = A.astype(float)
@@ -97,6 +97,26 @@ def containment_indices_boolean(A, B):
 
     CI = overlap / count[:, None]
     return CI
+
+def containment_matrix(matA, matB):
+    '''
+    Calculate a matrix of containment index for two lists of clusters
+
+    Parameters
+    ___________
+    matA : scipy.sparse.csr_matrix
+        axis 0 for clusters, axis 1 for nodes in network
+    matB : scipy.sparse.csr_matrix
+
+    Returns
+    ________
+    contain: 2D np.array
+    '''
+    both = matA.dot(matB.T)
+    countA = np.sum(matA, axis=1)
+    contain = 1.0*both/np.tile(countA, (both.shape[1], 1)).T
+    return contain
+
 
 def node2mat(f, g2ind, format='node'):
     '''

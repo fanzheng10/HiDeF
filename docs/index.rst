@@ -6,6 +6,8 @@
 Welcome to HiDeF's documentation!
 =================================
 
+HiDeF is an analysis framework to robustly resolve the hierarchical structures of networks based on multiscale community detection and the concepts of persistent homology.
+
 .. toctree::
    :maxdepth: 2
    
