@@ -548,7 +548,10 @@ def output_gml(out):
     assert os.path.isfile(out + '.edges') and os.path.isfile(out + '.nodes'), 'Files do not exist'
     df_node = pd.read_csv(out + '.nodes', sep='\t', index_col=0, header=None)
     df_edge = pd.read_csv(out + '.edges', sep='\t', header=None)
-    df_node.columns = ['Size', 'MemberList', 'Stability']
+    if df_node.shape[1] ==3:
+        df_node.columns = ['Size', 'MemberList', 'Stability']
+    else:
+        df_node.columns = ['Size', 'MemberList']
     df_node['LogSize'] = np.log2(df_node['Size'])
 
     G = nx.from_pandas_edgelist(df_edge, source=0, target=1, create_using=nx.DiGraph())

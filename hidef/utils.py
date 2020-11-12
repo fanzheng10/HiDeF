@@ -88,7 +88,7 @@ def containment_indices_boolean(A, B):
     --------
     CI: float
         the containment index
-    '''`
+    '''
     count = np.count_nonzero(A, axis=1)
 
     A = A.astype(float)
