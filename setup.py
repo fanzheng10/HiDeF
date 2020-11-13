@@ -1,6 +1,6 @@
 """A package for building a hierarchy based on multiple partitions on graph nodes.
 See:
-https://github.com/HierLab/HiDeF
+https://github.com/fanzheng10/HiDeF
 """
 
 from setuptools import setup, find_packages
@@ -14,14 +14,14 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='hidef',
-    version='1.0.0', 
+    version='1.0.1',
     description='A package for building a hierarchy based on multiple partitions on graph nodes.', 
     long_description=long_description,  
 
     long_description_content_type='text/markdown',  
-    url='https://github.com/HierLab/HiDeF',
-    author='She Zhang; Fan Zheng',
-    author_email='shz66@pitt.edu; f6zheng@health.ucsd.edu',
+    url='https://github.com/fanzheng10/HiDeF',
+    author='Fan Zheng, She Zhang',
+    author_email='fanzheng1101@gmail.com',
 
     # For a list of valid classifiers, see https://pypi.org/classifiers/
     classifiers=[ 
@@ -52,7 +52,7 @@ setup(
                       'leidenalg'],
 
     project_urls={ 
-        'Bug Reports': 'https://github.com/HierLab/HiDeF/issues',
-        'Source': 'https://github.com/HierLab/HiDeF',
+        'Bug Reports': 'https://github.com/fanzheng10/HiDeF/issues',
+        'Source': 'https://github.com/fanzheng10/HiDeF',
     },
 )
