@@ -581,7 +581,7 @@ if __name__ == '__main__':
     par.add_argument('--o', required=True, help='output file in ddot format')
     par.add_argument('--alg', default='louvain', choices=['louvain', 'leiden'], help='accept louvain or leiden')
     par.add_argument('--skipgml', action='store_true', help='If True, skips output of gml file')
-    par.add_argument('--keepclug', action='store_false', help='If True, output of cluG file')
+    par.add_argument('--keepclug', action='store_true', help='If True, output of cluG file')
 
 
     args = par.parse_args()

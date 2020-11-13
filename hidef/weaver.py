@@ -324,14 +324,13 @@ class Weaver(object):
             LOGGER.timeit('_cluster_redundancy')
             LOGGER.info('"merge" parameter set to true, so merging redundant clusters...')
 
-            cycles = []
             try:
                 cycles = list(nx.simple_cycles(G))
                 LOGGER.info('Merge {} redundant groups ...'.format(len(cycles)))
             except:
                 LOGGER.info('No redundant groups has been found ...')
                 cycles = []
-            while len(cycles) > 0:
+            if len(cycles) > 0:
                 Gcyc = nx.Graph()
                 for i in range(len(cycles)):
                     for v, w in itertools.combinations(cycles[i], 2):
@@ -339,12 +338,7 @@ class Weaver(object):
                 components = list(nx.connected_components(Gcyc))
                 for vs in components:
                     G = _collapse_nodes(G, vs, )
-                try:
-                    cycles = list(nx.simple_cycles(G))
-                    LOGGER.info('Merge {} redundant groups ...'.format(len(cycles)))
-                except:
-                    LOGGER.info('No more redundant groups has been found ...')
-                    cycles = []
+
             LOGGER.report('redundant nodes removed in %.2fs', '_cluster_redundancy')
 
         # add a root node to the graph
