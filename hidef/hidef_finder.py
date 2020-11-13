@@ -342,7 +342,7 @@ def run(G,
     LOGGER.info('Upper bound of resolution parameter: {:.4f}; with {:d} clusters'.format(maxres, len(maxres_partition)))
     stack_res_range.append((minres, maxres))
 
-    # TODO: resolution graph won't be needed. will be able to perform all-to-all comparison
+    # TODO: delete resolution graph and perform all-to-all comparison (how about memory?)
     update_resolution_graph(resolution_graph, minres, minres_partition,
                             minres_partition.total_weight_in_all_comms(), density, neighbors)
     update_resolution_graph(resolution_graph, maxres, maxres_partition,
@@ -481,7 +481,12 @@ def output_nodes(wv, names, out, len_component=None):
         ind = vdata['index']
         name = 'Cluster{}-{}'.format(str(v[0]), str(v[1]))
         if len_component != None:
-            wv_clusts.append([name, wv._assignment[ind], len_component[ind]])
+            if isinstance(ind, int):
+                persistence = len_component[ind]
+                wv_clusts.append([name, wv._assignment[ind], persistence])
+            else:
+                persistence = sum([len_component[x] for x in ind])
+                wv_clusts.append([name, wv._assignment[ind[0]], persistence])
         else:
             wv_clusts.append([name, wv._assignment[ind]])
     wv_clusts = sorted(wv_clusts, key=lambda x: np.sum(x[1]), reverse=True)

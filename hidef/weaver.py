@@ -282,11 +282,15 @@ class Weaver(object):
         # remove loops
         if merge:
 
-            def _collapse_nodes(G, vs): # TODO: merge should update persistence
+            def _collapse_nodes(G, vs):
                 all_in_nodes, all_out_nodes = [], []
                 vs = list(vs)
                 vs = sorted(vs, key = lambda x:G.nodes[x]['index'])
+
+                # add merge record
+                new_index = []
                 for v in vs:
+                    new_index.append(G.nodes[v]['index'])
                     all_in_nodes.extend([w for w in G.predecessors(v)])
                     all_out_nodes.extend([w for w in G.successors(v)])
                 all_in_nodes = list(set(all_in_nodes).difference(vs))
@@ -307,7 +311,7 @@ class Weaver(object):
                             dict_out_weights[w] = G[v][w]['weight']
 
                 G.remove_nodes_from(vs[1:])
-
+                G.nodes[vs[0]]['index'] = tuple(new_index)
                 for u in all_in_nodes:
                     if not G.has_predecessor(vs[0], u):
                         G.add_edge(u, vs[0], weight=dict_in_weights[u])
@@ -323,9 +327,11 @@ class Weaver(object):
             cycles = []
             try:
                 cycles = list(nx.simple_cycles(G))
+                LOGGER.info('Merge {} redundant groups ...'.format(len(cycles)))
             except:
-                LOGGER.info('No cycle has been found ...')
-            if len(cycles) > 0:
+                LOGGER.info('No redundant groups has been found ...')
+                cycles = []
+            while len(cycles) > 0:
                 Gcyc = nx.Graph()
                 for i in range(len(cycles)):
                     for v, w in itertools.combinations(cycles[i], 2):
@@ -335,8 +341,10 @@ class Weaver(object):
                     G = _collapse_nodes(G, vs, )
                 try:
                     cycles = list(nx.simple_cycles(G))
+                    LOGGER.info('Merge {} redundant groups ...'.format(len(cycles)))
                 except:
-                    LOGGER.info('No more cycle has been found ...')
+                    LOGGER.info('No more redundant groups has been found ...')
+                    cycles = []
             LOGGER.report('redundant nodes removed in %.2fs', '_cluster_redundancy')
 
         # add a root node to the graph
