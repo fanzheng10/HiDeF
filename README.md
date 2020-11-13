@@ -58,7 +58,9 @@ We provide a Jupyter notebook to demonstrate how to integrate the results of HiD
 
 ### Using HiDeF as a python package
 
-The following example shows how to build a hierarchical view of a network based on pre-computed communities, by using HiDeF as a Python package. This workflow only involves `weaver.py`. For additional documents, please see [https://hidef.readthedocs.io](https://hidef.readthedocs.io).
+For documents, please see [https://hidef.readthedocs.io](https://hidef.readthedocs.io).
+
+The following example shows how to build a hierarchical view of a network based on pre-computed communities, by using HiDeF as a Python package. This workflow only involves `weaver.py`.
 
 First, the user needs to provide the clustering results on these data points. These results may be obtained from any multilevel clustering algorithm of the user's choice. In this example, suppose we have 8 data points and define 7 ways of partitioning them (in a Python terminal), 
 
