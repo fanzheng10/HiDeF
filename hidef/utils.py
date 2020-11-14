@@ -97,22 +97,26 @@ def containment_indices_boolean(A, B):
     return CI
 
 
-def node2mat(f, g2ind, format='node'):
+def node2mat(f, g2ind, format='node', has_persistence=False):
     '''
     convert a text file to binary matrix (input of weaver)
 
     Parameters
     ----------
     f: str
-        the input file
+        the input TSV file
     g2ind: dict
         a dictionary to index genes
     format: str
         accepted values are 'node' or 'clixo'
+    has_persistence:
+        if True, the input file has an extra column, here usually the persistence
     Returns
     --------
     mat: list of np.array
         a list of array representing cluster membership
+    persistence: np.array
+        only applicable if has_persistence == True
     '''
     n = len(g2ind)
     df = pd.read_csv(f, sep='\t', header=None)
@@ -128,4 +132,8 @@ def node2mat(f, g2ind, format='node'):
         arr = np.zeros(n,)
         arr[gsi] = 1
         mat.append(arr)
-    return mat
+    if has_persistence:
+        persistence = df[3].tolist()
+        return mat, persistence
+    else:
+        return mat

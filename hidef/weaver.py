@@ -109,7 +109,7 @@ class Weaver(object):
             if T.nodes[node]['level'] == level:
                 return node
 
-    def weave(self, partitions, terminals=None, boolean=False, levels=False, **kwargs): #  TODO: weaver can be better structured
+    def weave(self, partitions, terminals=None, boolean=True, levels=False, **kwargs): #  TODO: weaver can be better structured
         """Finds a directed acyclic graph that represents a hierarchy recovered from 
         partitions.
 

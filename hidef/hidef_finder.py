@@ -488,7 +488,10 @@ def output_nodes(wv, names, out, len_component=None):
                 persistence = sum([len_component[x] for x in ind])
                 wv_clusts.append([name, wv._assignment[ind[0]], persistence])
         else:
-            wv_clusts.append([name, wv._assignment[ind]])
+            if isinstance(ind, int):
+                wv_clusts.append([name, wv._assignment[ind]])
+            else:
+                wv_clusts.append([name, wv._assignment[ind[0]]])
     wv_clusts = sorted(wv_clusts, key=lambda x: np.sum(x[1]), reverse=True)
 
     with open(out + '.nodes', 'w') as fh:
@@ -566,6 +569,30 @@ def output_gml(out):
     nx.write_gml(G, out +'.gml')
 
 
+def output_all(wv, names, out, persistence=None, iter=False, skipgml=False, t=0.75):
+    if iter==False:
+        output_nodes(wv, names, out, len_component)
+    else:
+        nnode_old, nedge_old = 0, 0
+        nnode, nedge = len(wv.hier.nodes()), len(wv.hier.edges())
+        i = 1
+        output_nodes(wv, names, '_tmp.{}.'.format(i) + out, persistence)
+        while (nnode != nnode_old) and (nedge != nedge_old):
+            g2ind = {names[k]:k for k in range(len(names))}
+            mat, persistence = node2mat('_tmp.{}.'.format(i) + out +'.nodes', g2ind, has_persistence=True)
+            wv = weaver.Weaver()
+            wv.weave(mat, boolean=True, merge=True, cutoff=t)
+            nnode_old, nedge_old = nnode, nedge
+            nnode, nedge = len(wv.hier.nodes()), len(wv.hier.edges())
+            i += 1
+            output_nodes(wv, names, '_tmp.{}.'.format(i) + out, persistence)
+        os.system('mv _tmp.{}.{}.nodes {}.nodes'.format(i, out, out))
+        os.system('rm _tmp*.nodes')
+
+    output_edges(wv, names, out)
+    if skipgml is False:
+        output_gml(out)
+
 
 if __name__ == '__main__':
     par = argparse.ArgumentParser()
@@ -580,6 +607,7 @@ if __name__ == '__main__':
     par.add_argument('--p', default=75, type=int, help='The p parameter; the consensus threshold collapsing community graph and choose representative genes for each community ensemble') # Consensus threshold.
     par.add_argument('--o', required=True, help='output file in ddot format')
     par.add_argument('--alg', default='louvain', choices=['louvain', 'leiden'], help='accept louvain or leiden')
+    par.add_argument('--iter', action='store_true', help='iterate weave function until fully converge')
     par.add_argument('--skipgml', action='store_true', help='If True, skips output of gml file')
     par.add_argument('--keepclug', action='store_true', help='If True, output of cluG file')
 
@@ -618,12 +646,10 @@ if __name__ == '__main__':
     len_component.insert(0, 0)
     LOGGER.report('Processing cluster graph in %.2fs', '_consensus')
 
-    weaver = weaver.Weaver()
-    T = weaver.weave(cluG_collapsed, boolean=True, assume_levels=False,
+    wv = weaver.Weaver()
+    T = wv.weave(cluG_collapsed, boolean=True, levels=False,
                      merge=True, cutoff=args.t) #
 
     names = [G.vs[i]['name'] for i in range(len(G.vs))]
-    output_nodes(weaver, names, args.o, len_component)
-    output_edges(weaver, names, args.o)
-    if args.skipgml is False:
-        output_gml(args.o)
+
+    output_all(wv, names, args.o, persistence=len_component, iter=args.iter, skipgml = args.skipgml)
