@@ -593,6 +593,8 @@ def output_all(wv, names, out, persistence=None, iter=False, skipgml=False, t=0.
     if skipgml is False:
         output_gml(out)
 
+    return wv # return the last step of weaver
+
 
 if __name__ == '__main__':
     par = argparse.ArgumentParser()

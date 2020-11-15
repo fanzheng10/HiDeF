@@ -326,7 +326,7 @@ class Weaver(object):
 
             try:
                 cycles = list(nx.simple_cycles(G))
-                LOGGER.info('Merge {} redundant groups ...'.format(len(cycles)))
+                # LOGGER.info('Merge {} redundant groups ...'.format(len(cycles)))
             except:
                 LOGGER.info('No redundant groups has been found ...')
                 cycles = []
@@ -336,6 +336,7 @@ class Weaver(object):
                     for v, w in itertools.combinations(cycles[i], 2):
                         Gcyc.add_edge(v, w)
                 components = list(nx.connected_components(Gcyc))
+                LOGGER.info('Merge {} redundant groups ...'.format(len(components)))
                 for vs in components:
                     G = _collapse_nodes(G, vs, )
 
