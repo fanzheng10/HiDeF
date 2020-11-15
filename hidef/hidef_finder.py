@@ -455,7 +455,7 @@ def consensus(cluG, k=5,  f=1.0, p=100):
     return cluG_collapsed_w_len
 
 
-def output_nodes(wv, names, out, len_component=None):
+def output_nodes(wv, names, out, extra_data=None, original_cluster_names=None):
     '''
     Write a .nodes file according to the weaver result. Four columns are: community names, sizes, member genes, and persistence
 
@@ -467,25 +467,32 @@ def output_nodes(wv, names, out, len_component=None):
         a list of ordered gene names
     out : string
         prefix of the output file
-    len_component: list of int
+    extra_data: list of int
         a list of numbers to show on the last column of the output file
+    original_cluster_names: list
+        if not None, do not use the weaver renames, but use a list of specified names; should be equal to the number of clusters in "wv"
 
     Returns
     ----------
     '''
-    # internals = lambda T: (node for node in T if isinstance(node, tuple))
     wv_clusts = []
+    if original_cluster_names != None:
+        assert len(original_cluster_names) == len(wv._assignment)
     for v, vdata in wv.hier.nodes(data=True):
         if not isinstance(v, tuple):
             continue
         ind = vdata['index']
-        name = 'Cluster{}-{}'.format(str(v[0]), str(v[1]))
-        if len_component != None:
+        if original_cluster_names != None:
+            name = original_cluster_names[ind]
+        else:
+            name = 'Cluster{}-{}'.format(str(v[0]), str(v[1]))
+
+        if extra_data != None:
             if isinstance(ind, int):
-                persistence = len_component[ind]
+                persistence = extra_data[ind]
                 wv_clusts.append([name, wv._assignment[ind], persistence])
             else:
-                persistence = sum([len_component[x] for x in ind])
+                persistence = sum([extra_data[x] for x in ind])
                 wv_clusts.append([name, wv._assignment[ind[0]], persistence])
         else:
             if isinstance(ind, int):
@@ -499,7 +506,7 @@ def output_nodes(wv, names, out, len_component=None):
         for ci in range(len(wv_clusts)):
             cn = wv_clusts[ci][0]
             cc = wv_clusts[ci][1]
-            if len_component != None:
+            if extra_data != None:
                 cl = wv_clusts[ci][2]
                 fh.write(cn + '\t' + str(np.sum(cc)) + '\t' + ' '.join(sorted([names[x] for x in np.where(cc)[0] ])) + '\t' + str(cl) + '\n')
             else:
@@ -571,21 +578,24 @@ def output_gml(out):
 
 def output_all(wv, names, out, persistence=None, iter=False, skipgml=False, t=0.75):
     if iter==False:
-        output_nodes(wv, names, out, len_component)
+        output_nodes(wv, names, out, persistence)
     else:
         nnode_old, nedge_old = 0, 0
         nnode, nedge = len(wv.hier.nodes()), len(wv.hier.edges())
         i = 1
-        output_nodes(wv, names, '_tmp.{}.'.format(i) + out, persistence)
+        output_nodes(wv, names, '_tmp.{}.'.format(i) + out, extra_data=persistence)
         while (nnode != nnode_old) and (nedge != nedge_old):
             g2ind = {names[k]:k for k in range(len(names))}
-            mat, persistence = node2mat('_tmp.{}.'.format(i) + out +'.nodes', g2ind, has_persistence=True)
+            if persistence != None:
+                data = node2mat('_tmp.{}.'.format(i) + out +'.nodes', g2ind, has_persistence=True)
+            else:
+                data = node2mat('_tmp.{}.'.format(i) + out + '.nodes', g2ind)
             wv = weaver.Weaver()
-            wv.weave(mat, boolean=True, merge=True, cutoff=t)
+            wv.weave(data['cluster'], boolean=True, merge=True, cutoff=t)
             nnode_old, nedge_old = nnode, nedge
             nnode, nedge = len(wv.hier.nodes()), len(wv.hier.edges())
             i += 1
-            output_nodes(wv, names, '_tmp.{}.'.format(i) + out, persistence)
+            output_nodes(wv, names, '_tmp.{}.'.format(i) + out, extra_data=data['extra.data'])
         os.system('mv _tmp.{}.{}.nodes {}.nodes'.format(i, out, out))
         os.system('rm _tmp*.nodes')
 

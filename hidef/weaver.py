@@ -383,7 +383,6 @@ class Weaver(object):
 
         # setrecursionlimit(rcl)
 
-        #nx.write_edgelist(G, 'sample_granny_network.txt')
         G.remove_edges_from(redundant)
         LOGGER.report('redundant edges removed in %.2fs', '_redundancy')
 

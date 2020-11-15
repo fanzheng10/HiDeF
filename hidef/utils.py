@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from scipy.sparse import *
 
 def network_perturb(G, sample=0.8):
     '''
@@ -25,9 +26,9 @@ def jaccard_matrix(matA, matB, threshold=0.75, return_mat=False): # assume matA,
 
     Parameters
     ----------
-    matA : scipy.sparse.csr_matrix
+    matA : 2D array or scipy.sparse.csr_matrix
         axis 0 for clusters, axis 1 for nodes in network
-    matB : scipy.sparse.csr_matrix
+    matB : 2D array or scipy.sparse.csr_matrix
     threshold :
         a similarity cutoff for Jaccard index
     return_mat : bool
@@ -40,6 +41,11 @@ def jaccard_matrix(matA, matB, threshold=0.75, return_mat=False): # assume matA,
     jac : np.array
         a full matrix of pairwise Jaccard indices
     '''
+    if not isinstance(matA, csr_matrix):
+        matA = csr_matrix(matA)
+    if not isinstance(matA, csr_matrix):
+        matB = csr_matrix(matB)
+
     both = matA.dot(matB.T)
 
     either = (np.tile(matA.getnnz(axis=1), (matB.shape[0],1)) + matB.getnnz(axis=1)[:, np.newaxis]).T -both
@@ -73,7 +79,7 @@ def containment_indices(A, B):
 
     return CI, LA, LB
 
-def containment_indices_boolean(A, B):
+def containment_indices_boolean(A, B): # TODO: test sparse matrix here
     '''
     Calculate a matrix of containment index for two lists of clusters
 
@@ -113,10 +119,7 @@ def node2mat(f, g2ind, format='node', has_persistence=False):
         if True, the input file has an extra column, here usually the persistence
     Returns
     --------
-    mat: list of np.array
-        a list of array representing cluster membership
-    persistence: np.array
-        only applicable if has_persistence == True
+    data: a dictionary, contain the field 'cluster', 'name', and could contain 'extra.data'
     '''
     n = len(g2ind)
     df = pd.read_csv(f, sep='\t', header=None)
@@ -132,8 +135,8 @@ def node2mat(f, g2ind, format='node', has_persistence=False):
         arr = np.zeros(n,)
         arr[gsi] = 1
         mat.append(arr)
+    data = {'cluster':mat, 'name':df[0].tolist()}
     if has_persistence:
         persistence = df[3].tolist()
-        return mat, persistence
-    else:
-        return mat
+        data['extra.data'] = persistence
+    return data
