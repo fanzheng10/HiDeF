@@ -514,7 +514,7 @@ def output_nodes(wv, names, out, extra_data=None, original_cluster_names=None):
                     sorted([names[x] for x in np.where(cc)[0]])) + '\n')
     return
 
-def output_edges(wv, names, out, leaf = False):
+def output_edges(wv, names, out, leaf = False, original_cluster_names=None):
     '''
     Output hierarchy in the DDOT format; wst column is parents and 2nd column is children
     Note this output is the 'forward' state.
@@ -528,6 +528,8 @@ def output_edges(wv, names, out, leaf = False):
         prefix of the output file
     leaf: bool
         if True, then write genes into the result
+    original_cluster_names: list
+        if not None, do not use the weaver renames, but use a list of specified names; should be equal to the number of clusters in "wv"
 
     Returns
     ----------
@@ -536,14 +538,24 @@ def output_edges(wv, names, out, leaf = False):
     # right now do not support node names as tuples
     with open(out+ '.edges', 'w') as fh:
         for e in wv.hier.edges():
-            parent = 'Cluster{}'.format(str(e[0][0]) + '-' + str(e[0][1]))
-            if isinstance(e[1], tuple):
-                child = 'Cluster{}-{}'.format(str(e[1][0]), str(e[1][1]))
-                outstr = '{}\t{}\tdefault\n'.format(parent, child)
-                fh.write(outstr)
+            if original_cluster_names == None:
+                parent = 'Cluster{}'.format(str(e[0][0]) + '-' + str(e[0][1]))
+                if isinstance(e[1], tuple):
+                    child = 'Cluster{}-{}'.format(str(e[1][0]), str(e[1][1]))
+                    outstr = '{}\t{}\tdefault\n'.format(parent, child)
+                    fh.write(outstr)
+                elif leaf:
+                    child = names[e[1]]
+                    outstr = '{}\t{}\tgene\n'.format(parent, child)
+                    fh.write(outstr)
             else:
-                child = names[e[1]]
-                if leaf:
+                parent = original_cluster_names[wv.hier.nodes[e[0]]['index']]
+                if isinstance(e[1], tuple):
+                    child = original_cluster_names[wv.hier.nodes[e[1]]['index']]
+                    outstr = '{}\t{}\tdefault\n'.format(parent, child)
+                    fh.write(outstr)
+                elif leaf:
+                    child = names[e[1]]
                     outstr = '{}\t{}\tgene\n'.format(parent, child)
                     fh.write(outstr)
 
