@@ -26,9 +26,9 @@ pandas
 
 ### Running HiDeF from Cytoscape (Recommended)
 
-HiDeF has been fully integrated with the [Cytoscape](https://cytoscape.org/) platform, via our recently published [Community Detection APplication and Service (CDAPS)](https://doi.org/10.1371/journal.pcbi.1008239) framework. Documentations can be found in the link above.
+HiDeF has been fully integrated with the [Cytoscape](https://cytoscape.org/) platform, via our recently published [Community Detection APplication and Service (CDAPS)](https://doi.org/10.1371/journal.pcbi.1008239) framework.
 
-This option allows users accessing unique features in the CDAPS framework, including (1) interacting with the source network to visualize the subnetwork of any detected community (2) performing gene set enrichment analysis (when the vertices of the source network are proteins/genes) (3) sharing the models via the [NDEx](http://www.ndexbio.org/) database.
+With this option users can access unique features in the CDAPS framework, including (1) interacting with the source network to visualize the subnetwork of any detected community (2) performing gene set enrichment analysis (when the vertices of the source network are proteins/genes) (3) sharing the models via the [NDEx](http://www.ndexbio.org/) database.
 
 
 ### Running HiDeF as a command-line tool (Recommended for big input networks)
