@@ -1,6 +1,6 @@
 # HiDeF (Hierarchical community Decoding Framework)
 
-<img src="https://github.com/fanzheng10/HiDeF/blob/master/fig1.png" width="600">
+<img src="https://github.com/fanzheng10/HiDeF/blob/master/fig1.png" width="400">
 
 ## Introduction
 
@@ -26,15 +26,14 @@ pandas
 
 ### Running HiDeF from Cytoscape (Recommended)
 
-HiDeF has been fully integrated with the [Cytoscape](https://cytoscape.org/) environment, via our recently published [Community Detection APplication and Service (CDAPS)](https://doi.org/10.1371/journal.pcbi.1008239) framework. Documentations can be found in the link above.
+HiDeF has been fully integrated with the [Cytoscape](https://cytoscape.org/) platform, via our recently published [Community Detection APplication and Service (CDAPS)](https://doi.org/10.1371/journal.pcbi.1008239) framework. Documentations can be found in the link above.
 
-By using this option, users can leverage the computing power of [National Resources of Network Biology (NRNB)](https://nrnb.org/) for the HiDeF analysis, and other nice features provided in the CDAPS framework, including (1) interact with the source network to visualize the subnetwork of any detected community (2) perform gene set enrichment analysis (when the vertices of the source network are proteins/genes) (3) store and share the models via the [NDEx](http://www.ndexbio.org/) database.
+This option allows users accessing unique features in the CDAPS framework, including (1) interacting with the source network to visualize the subnetwork of any detected community (2) performing gene set enrichment analysis (when the vertices of the source network are proteins/genes) (3) sharing the models via the [NDEx](http://www.ndexbio.org/) database.
 
 
 ### Running HiDeF as a command-line tool (Recommended for big input networks)
 
 Using the codes in this repository, HiDeF can be used as a command-line tool. There are two main components of the scripts: `hidef_finder.py` and `weaver.py`.
-
 
 To sweep the resolution profile and generate an optimized hierarchy based on pan-resolution community persistence, run the following command in a terminal: 
 
@@ -52,7 +51,7 @@ Other auxiliary parameters are explained in the manuscript.
 - `$out.edges`: A TSV file describing the parent-child relationships of communities in the hierarchy. The parent communities are in the 1st column and the children communities are in the 2nd column.  
 - `$out.gml`: A file in the GML format that can be opened in Cytoscape to visualize the hierarchy (using "yFiles hierarchic layout" in Cytoscape)
 
-#### Integration with ScanPy
+#### Single-cell data analysis
 
 We provide a Jupyter notebook to demonstrate how to integrate the results of HiDeF with popular single-cell data analysis framework (here [ScanPy](https://scanpy.readthedocs.io/en/stable/)). 
 
@@ -72,12 +71,6 @@ First, the user needs to provide the clustering results on these data points. Th
 ...      '00110000',
 ...      '00001100',
 ...      '00000011']
-```
-
-The labels of these nodes are assigned as follows (optional):
-
-```
->>> nodes = 'ABCDEFGH'
 ```
 
 Then the hierarchical view can be obtained by
