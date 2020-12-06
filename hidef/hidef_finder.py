@@ -575,6 +575,7 @@ def output_gml(out):
     assert os.path.isfile(out + '.edges') and os.path.isfile(out + '.nodes'), 'Files do not exist'
     df_node = pd.read_csv(out + '.nodes', sep='\t', index_col=0, header=None)
     df_edge = pd.read_csv(out + '.edges', sep='\t', header=None)
+    df_edge = df_edge.loc[df_edge[2]=='default', :]
     if df_node.shape[1] ==3:
         df_node.columns = ['Size', 'MemberList', 'Stability']
     else:

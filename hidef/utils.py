@@ -43,7 +43,7 @@ def jaccard_matrix(matA, matB, threshold=0.75, return_mat=False): # assume matA,
     '''
     if not isinstance(matA, csr_matrix):
         matA = csr_matrix(matA)
-    if not isinstance(matA, csr_matrix):
+    if not isinstance(matB, csr_matrix):
         matB = csr_matrix(matB)
 
     both = matA.dot(matB.T)
@@ -135,7 +135,7 @@ def node2mat(f, g2ind, format='node', has_persistence=False):
         arr = np.zeros(n,)
         arr[gsi] = 1
         mat.append(arr)
-    data = {'cluster':mat, 'name':df[0].tolist()}
+    data = {'cluster':mat, 'name':df[0].tolist(), 'extra.data':None}
     if has_persistence:
         persistence = df[3].tolist()
         data['extra.data'] = persistence
