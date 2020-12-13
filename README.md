@@ -20,6 +20,8 @@ scipy
 pandas
 
 ## Installation
+
+From source:  
 `python setup.py install`
 
 ## Usage
@@ -77,8 +79,6 @@ Then the hierarchical view can be obtained by
 
 ```
 >>> from hidef import weaver
->>> weaver = Weaver(P, boolean=True, terminals=nodes, assume_levels=False)
->>> T = weaver.weave(cutoff=0.9)
+>>> wv = weaver.Weaver()
+>>> H = wv.weave(P, cutoff=1.0)
 ```
-
-The hierarchy is represented by a `networkx.DiGraph` object, which can be obtained by querying `T.hier`. `T` also contains a lot of useful functions for extracting useful information about the hierarchy. 
