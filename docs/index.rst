@@ -6,13 +6,46 @@
 Welcome to HiDeF's documentation!
 =================================
 
-HiDeF is an analysis framework to robustly resolve the hierarchical structures of networks based on multiscale community detection and the concepts of persistent homology.
+HiDeF [#f1]_ aims to reimagine hierarchical data clustering. The name HiDeF stands for “Hierarchical community Decoding Framework”. HiDeF integrates graph-based community detection and the idea of “persistent homology” in order to determine robust clustering patterns in complex data at multiple scales. Given the inputs in data points in graph or matrix formats, HiDeF returns a list of multiscale clusters with measurement of their robustness, as well as a directed acyclic graph (DAG) to represent the organization of these clusters.
+
+Installation
+------------
 
 .. toctree::
+   self
+
+Local installation of python package
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+From source: ::
+
+  python setup.py install
+
+Installation via ``pip`` or ``conda``: coming soon.
+
+Cytoscape
+^^^^^^^^^^
+HiDeF is separately distributed via the `CDAPS <http://apps.cytoscape.org/apps/cycommunitydetection>`_ framework [#f2]_ in Cytoscape.
+
+.. Note::
+   We try to maintain timely synchronization of the HiDeF versions across the Python package and Cytoscape. However, it may be possible to have small difference in results across the platforms due to the Cytoscape version is behind the latest version of the Python package.
+
+
+Tutorials
+_________
+.. toctree::
+   tutorial/index
+
+API
+___
+.. toctree::
    :maxdepth: 2
-   
-   hidef_finder
-   weaver
-   utils
+
+   api
+
+References
+----------
+.. rubric:: Footnotes
+.. [#f1] Zheng, F, Zhang, S, et al. HiDeF: identifying persistent structures in multiscale ‘omics data. *Genome Biology*, Accepted.
+.. [#f2] Singhal, A. Cao, S. Churas, C. et al. Multiscale community detection in Cytoscape. PLoS Comput. Biol. 16, e1008239 (2020)
 
 

@@ -492,7 +492,7 @@ def output_nodes(wv, names, out, extra_data=None, original_cluster_names=None):
                 persistence = extra_data[ind]
                 wv_clusts.append([name, wv._assignment[ind], persistence])
             else:
-                persistence = sum([extra_data[x] for x in ind])
+                persistence = sum([extra_data[x] for x in ind]) # TODO: this tuple is a bit dumb. Should be inside the program
                 wv_clusts.append([name, wv._assignment[ind[0]], persistence])
         else:
             if isinstance(ind, int):

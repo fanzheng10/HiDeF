@@ -97,7 +97,22 @@ class Weaver(object):
         levels.sort()
         return levels
 
-    def some_node(self, level):
+    # NEW
+    # def optimal_disjoint_nodes(self, feature='index', min_size=4, mode=''):
+    #     '''
+    #
+    #     :return:
+    #     '''
+    #     if self.hier is None:
+    #         raise ValueError('hierarchy not built. Call weave() first')
+    #
+    #     T = self.hier
+    #     # nodesAt5 = [x for x, y in T.nodes(data=True) if y['feature'] == 5]
+    #
+    #     # select high stability and avoid parent and children. Have a minimum, and have a tolerance
+
+
+    def some_node_from_level(self, level):
         # """Returns the first node that is associated with the partition specified by level."""
 
         if self.hier is None:
@@ -109,7 +124,8 @@ class Weaver(object):
             if T.nodes[node]['level'] == level:
                 return node
 
-    def weave(self, partitions, terminals=None, boolean=True, levels=False, **kwargs): #  TODO: weaver can be better structured
+
+    def weave(self, partitions, terminals=None, boolean=True, levels=False, **kwargs):
         """Finds a directed acyclic graph that represents a hierarchy recovered from 
         partitions.
 
@@ -311,7 +327,7 @@ class Weaver(object):
                             dict_out_weights[w] = G[v][w]['weight']
 
                 G.remove_nodes_from(vs[1:])
-                G.nodes[vs[0]]['index'] = tuple(new_index)
+                G.nodes[vs[0]]['index'] = tuple(new_index) # TODO: why does this has to be a tuple?
                 for u in all_in_nodes:
                     if not G.has_predecessor(vs[0], u):
                         G.add_edge(u, vs[0], weight=dict_in_weights[u])
@@ -372,16 +388,6 @@ class Weaver(object):
                         # a is a grandparent
                         redundant.append((a, node))
                         break
-
-        # rcl = getrecursionlimit()
-        # if rcl < RECURSION_MAX_DEPTH:
-        #     setrecursionlimit(RECURSION_MAX_DEPTH)
-
-        # for u, v in G.edges():
-        #     if n_simple_paths(G, u, v) > 1:
-        #         redundant.append((u, v))
-
-        # setrecursionlimit(rcl)
 
         G.remove_edges_from(redundant)
         LOGGER.report('redundant edges removed in %.2fs', '_redundancy')
@@ -468,16 +474,6 @@ class Weaver(object):
             parents = [_ for _ in G.predecessors(node)]
             if len(parents) > 1:
                 nsize = node_size(node)
-                #weights = [G.edges()[p, node]['weight'] for p in parents]
-
-                # preference if multiple best
-                # if self.assume_levels:
-                #     pref = [G.nodes[p]['index'] for p in parents]
-                # else:
-                #     pref = []
-                #     for p in parents:
-                #         nsize = -self.node_size(p) # use negative size to sort in ascending order when reversed
-                #         pref.append(nsize)
                 pref = []
                 for p in parents:
                     w = G.edges()[p, node]['weight'] 
@@ -522,7 +518,6 @@ class Weaver(object):
 
         G = self._full.copy()
 
-        #W = [x[1] for x in self._secondary]
         secondary = [x[0] for x in self._secondary]
 
         if top == 0:
@@ -533,16 +528,48 @@ class Weaver(object):
             removed_edges = secondary[n:]
             G.remove_edges_from(removed_edges)
 
-        # prune tree
 
-        self.hier = prune(G)
-        # self.hier = G
+        # self.hier = prune(G)
+        self.hier = G
 
         # update attributes
         self.update_depths()
         self.relabel()
         
         return self.hier
+
+    # NEW
+    def delete_nodes(self, nodes, relabel=False):
+        '''
+        Delete some nodes from the hierarchy. This approach can be used to delete those with low persistence and rebuild a simpler hierarchy.
+
+        Parameters
+        ----------
+        nodes :  a list of string
+            names of the cluster to delete.
+        relabel : bool (default = False)
+            if True, rename nodes. Setting to False may be easier to track the cluster identities.
+        '''
+        G = self.hier
+        if G is None:
+            raise ValueError('hierarchy not built. Call weave() first')
+        for u in nodes:
+            all_in_nodes = G.predecessors(u)
+            all_out_nodes = G.successors(u)
+            new_edge_pairs = [(a, b) for a, b in itertools.product(all_in_nodes, all_out_nodes)]
+            G.add_edges_from(new_edge_pairs) # TODO: right now edges store some information about containment index, not seen from here
+            G.remove_node(u)
+        self.hier = G
+
+        self.update_depths()
+        if relabel:
+            self.relabel()
+
+        return
+
+    # def select_nodes():
+
+
 
     def get_root(self):
         G = self.hier
@@ -871,7 +898,7 @@ def get_root(T):
 
     return None
 
-def prune(T):
+def prune(T): # TODO: this can be deprecated
     '''
     Removes the nodes with only one child and the nodes that have no terminal
     nodes (e.g. genes) as descendants. (This basically removes identical clusters)
@@ -1011,7 +1038,9 @@ def stuff_dummies(hierarchy):
     
     return T
 
-def show_hierarchy(T, **kwargs):
+
+# TODO: make this using dash
+def show_hierarchy(T, **kwargs): #TODO: dependency here is not declared
     """Visualizes the hierarchy in notebook"""
 
     from networkx.drawing.nx_pydot import write_dot, graphviz_layout
