@@ -63,19 +63,19 @@ The following example shows how to build a hierarchical view of a network based 
 First, the user needs to provide the clustering results on these data points. These results may be obtained from any multilevel clustering algorithm of the user's choice. In this example, suppose we have 8 data points and define 7 ways of partitioning them (in a Python terminal), 
 
 ```
->>> P = ['11111111',
-...      '11111100',
-...      '00001111',
-...      '11100000',
-...      '00110000',
-...      '00001100',
-...      '00000011']
+P = ['11111111',
+  '11111100',
+  '00001111',
+  '11100000',
+  '00110000',
+  '00001100',
+  '00000011']
 ```
 
 Then the hierarchical view can be obtained by
 
 ```
->>> from hidef import weaver
->>> wv = weaver.Weaver()
->>> H = wv.weave(P, cutoff=1.0)
+from hidef import weaver
+wv = weaver.Weaver()
+H = wv.weave(P, cutoff=1.0)
 ```
