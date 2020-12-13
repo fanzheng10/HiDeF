@@ -20,6 +20,8 @@ scipy
 pandas
 
 ## Installation
+
+From source:  
 `python setup.py install`
 
 ## Usage
@@ -51,9 +53,6 @@ Other auxiliary parameters are explained in the manuscript.
 - `$out.edges`: A TSV file describing the parent-child relationships of communities in the hierarchy. The parent communities are in the 1st column and the children communities are in the 2nd column.  
 - `$out.gml`: A file in the GML format that can be opened in Cytoscape to visualize the hierarchy (using "yFiles hierarchic layout" in Cytoscape)
 
-#### Single-cell data analysis
-
-We provide a Jupyter notebook to demonstrate how to integrate the results of HiDeF with popular single-cell data analysis framework (here [ScanPy](https://scanpy.readthedocs.io/en/stable/)). 
 
 ### Using HiDeF as a python package
 
@@ -64,21 +63,19 @@ The following example shows how to build a hierarchical view of a network based 
 First, the user needs to provide the clustering results on these data points. These results may be obtained from any multilevel clustering algorithm of the user's choice. In this example, suppose we have 8 data points and define 7 ways of partitioning them (in a Python terminal), 
 
 ```
->>> P = ['11111111',
-...      '11111100',
-...      '00001111',
-...      '11100000',
-...      '00110000',
-...      '00001100',
-...      '00000011']
+P = ['11111111',
+  '11111100',
+  '00001111',
+  '11100000',
+  '00110000',
+  '00001100',
+  '00000011']
 ```
 
 Then the hierarchical view can be obtained by
 
 ```
->>> from hidef import weaver
->>> weaver = Weaver(P, boolean=True, terminals=nodes, assume_levels=False)
->>> T = weaver.weave(cutoff=0.9)
+from hidef import weaver
+wv = weaver.Weaver()
+H = wv.weave(P, cutoff=1.0)
 ```
-
-The hierarchy is represented by a `networkx.DiGraph` object, which can be obtained by querying `T.hier`. `T` also contains a lot of useful functions for extracting useful information about the hierarchy. 
