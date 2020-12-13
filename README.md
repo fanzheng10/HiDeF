@@ -26,14 +26,14 @@ From source:
 
 ## Usage
 
-### Running HiDeF from Cytoscape (Recommended)
+### Running HiDeF from Cytoscape
 
 HiDeF has been fully integrated with the [Cytoscape](https://cytoscape.org/) platform, via our recently published [Community Detection APplication and Service (CDAPS)](https://doi.org/10.1371/journal.pcbi.1008239) framework.
 
 With this option users can access unique features in the CDAPS framework, including (1) interacting with the source network to visualize the subnetwork of any detected community (2) performing gene set enrichment analysis (when the vertices of the source network are proteins/genes) (3) sharing the models via the [NDEx](http://www.ndexbio.org/) database.
 
 
-### Running HiDeF as a command-line tool (Recommended for big input networks)
+### Running HiDeF as a command-line tool
 
 Using the codes in this repository, HiDeF can be used as a command-line tool. There are two main components of the scripts: `hidef_finder.py` and `weaver.py`.
 
@@ -56,7 +56,7 @@ Other auxiliary parameters are explained in the manuscript.
 
 ### Using HiDeF as a python package
 
-For documents, please see [https://hidef.readthedocs.io](https://hidef.readthedocs.io).
+For documents (in construction), please see [https://hidef.readthedocs.io](https://hidef.readthedocs.io).
 
 The following example shows how to build a hierarchical view of a network based on pre-computed communities, by using HiDeF as a Python package. This workflow only involves `weaver.py`.
 
