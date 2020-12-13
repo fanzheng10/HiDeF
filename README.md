@@ -53,9 +53,6 @@ Other auxiliary parameters are explained in the manuscript.
 - `$out.edges`: A TSV file describing the parent-child relationships of communities in the hierarchy. The parent communities are in the 1st column and the children communities are in the 2nd column.  
 - `$out.gml`: A file in the GML format that can be opened in Cytoscape to visualize the hierarchy (using "yFiles hierarchic layout" in Cytoscape)
 
-#### Single-cell data analysis
-
-We provide a Jupyter notebook to demonstrate how to integrate the results of HiDeF with popular single-cell data analysis framework (here [ScanPy](https://scanpy.readthedocs.io/en/stable/)). 
 
 ### Using HiDeF as a python package
 
