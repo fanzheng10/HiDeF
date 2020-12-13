@@ -9,7 +9,8 @@
 HiDeF is an analysis framework to robustly resolve the hierarchical structures of networks based on multiscale community detection and the concepts of persistent homology. 
 
 HiDeF is described in the following manuscript:  
-Zheng F., Zhang S., Churas C., Pratt D., Bahar I., Ideker T., Genome Biology (Accepted) [Preprint](https://doi.org/10.1101/2020.06.16.151555)
+
+F Zheng, S Zhang, C Churas, D Pratt, I Bahar, T Ideker (2020). HiDeF: identifying persistent structures in multiscale omics data. Accepted by Genome Biology.
 
 ## Dependencies
 
