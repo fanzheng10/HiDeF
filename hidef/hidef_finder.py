@@ -623,7 +623,7 @@ if __name__ == '__main__':
     par = argparse.ArgumentParser()
     par.add_argument('--g', required=True, help='The input graph as a TSV file (no header)')
     par.add_argument('--minres', type=float, default=0.001, help='Minimum resolution parameter') # cdaps not-expose
-    par.add_argument('--maxres', type=float, default=50.0, help='Maximum resolution parameter. Increase to get more smaller communities.') # Maximum resolution parameter
+    par.add_argument('--maxres', type=float, default=25.0, help='Maximum resolution parameter. Increase to get more smaller communities.') # Maximum resolution parameter
     par.add_argument('--n', type=int, help= 'The target community number. Explore the maximum resolution parameter until the number of generated communities at this resolution is close enough to this value. Increase to get more smaller communities.') # Target community number
     par.add_argument('--d', type=float, default=0.1, help='Inversed density of sampling the resolutions. Decrease to sample more resolutions and introduce more transient communities (will increase running time)') # cdaps not-expose
     par.add_argument('--t', type=float, default=0.75, help='The tau parameter; the similarity/containment threshold. A cutoff for creating the community ensemble graph and the containment graph') # cdaps not-expose
