@@ -1040,7 +1040,9 @@ def stuff_dummies(hierarchy):
 
 
 # TODO: make this using dash
-def show_hierarchy(T, **kwargs): #TODO: dependency here is not declared
+def show_hierarchy(T, **kwargs):
+    #TODO: dependency here is not declared
+    #TODO: node label?
     """Visualizes the hierarchy in notebook"""
 
     from networkx.drawing.nx_pydot import write_dot, graphviz_layout
@@ -1061,7 +1063,7 @@ def show_hierarchy(T, **kwargs): #TODO: dependency here is not declared
     if isWindows:
         style += '.exe'
 
-    if not leaf:
+    if not leaf: # TODO: leaf false has a bug
         T2 = T.subgraph(n for n in T.nodes() if istuple(n))
         if 'nodelist' in kwargs:
             nodes = kwargs.pop('nodelist')

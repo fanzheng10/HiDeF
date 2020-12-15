@@ -6,6 +6,8 @@
 Welcome to HiDeF's documentation!
 =================================
 
+This site is under construction.
+
 HiDeF [#f1]_ aims to reimagine hierarchical data clustering. The name HiDeF stands for “Hierarchical community Decoding Framework”. HiDeF integrates graph-based community detection and the idea of “persistent homology” in order to determine robust clustering patterns in complex data at multiple scales. Given the inputs in data points in graph or matrix formats, HiDeF returns a list of multiscale clusters with measurement of their robustness, as well as a directed acyclic graph (DAG) to represent the organization of these clusters.
 
 Installation

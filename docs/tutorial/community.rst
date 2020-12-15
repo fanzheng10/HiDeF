@@ -1,7 +1,8 @@
 Generate persistent clusters
 ------------------------------------------------------
 
-[Figure 1]
+.. image:: ../img/fig1.png
+  :width: 600
 
 HiDeF ultilizes graph-based community detection (CD) with resolution parameters (such as Louvain [#f1]_ or Leiden [#f2]_ algorithms) to detect clusters. The resolution parameter was sampled at many values, and a set of communities was generated at each resolution. The solutions at each resolution were compared to each other. We define “persistent” communities as those repetitively discovered in many different resolutions.
 
@@ -15,11 +16,11 @@ The following example takes the BioPlex [#f3]_ protein-protein interaction netwo
 Output formats
 ^^^^^^^^^^^^^^
 
-``*.nodes``: a .tsv file in which each row represents a community. The first 3 columns being the name, the size, and the elements of the community.
+``*.nodes``: a .tsv file in which each row represents a community. The first 3 columns being the name, the size, and the elements of the community. See ``hidef_finder.output_nodes``.
 
-``*.edges`` a .tsv file in which each row represents a directed edge. The first and second column indicate the target (parent) and source (child community, respectively.
+``*.edges`` a .tsv file in which each row represents a directed edge. The first and second column indicate the target (parent) and source (child community, respectively. See ``hidef_finder.output_edges``.
 
-``*.gml`` a file in the GML (Graph Modelling Language) format to represent the DAG.
+``*.gml`` a file in the GML (Graph Modelling Language) format to represent the DAG. See ``hidef_finder.output_gml``.
 
 ``*.gmt`` GMT format as described in `GSEA <https://software.broadinstitute.org/cancer/software/gsea/wiki/index.php/Data_formats>`_. (Coming soon)
 

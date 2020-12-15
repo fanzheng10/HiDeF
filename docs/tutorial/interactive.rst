@@ -2,6 +2,8 @@ Browse and interact with the hierarchical models
 -------------------------------------------------
 Coming soon
 
+.. _render:
+
 Render the model
 ^^^^^^^^^^^^^^^^^^^^
 
