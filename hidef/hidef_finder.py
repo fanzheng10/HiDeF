@@ -133,11 +133,11 @@ def run_alg(G, alg, gamma=1.0, sample=1.0):
         choose between 'louvain' and 'leiden'
     gamma : float
         resolution parameter
-
+    sample : if smaller than 1, randomly delete a fraction of edges each time
     Returns
     ------
-    partition : louvain.VertexPartition.MutableVertexPartition
-        The parition object in Louvain or Leiden packages
+    C: scipy.sparse.csr_matrix
+        a matrix recording the membership of each cluster
 
     '''
     G1 = G.copy()
