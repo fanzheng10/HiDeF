@@ -14,7 +14,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='hidef',
-    version='1.0.1',
+    version='1.1.1',
     description='A package for building a hierarchy based on multiple partitions on graph nodes.', 
     long_description=long_description,  
 
@@ -32,19 +32,15 @@ setup(
 
         'License :: OSI Approved :: MIT License',
 
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
     ],
     scripts=['hidef/hidef_finder.py'],
     keywords='hierarchy tree DAG',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']), 
 
-    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, <4',
+    python_requires='>=3.6, <4',
     install_requires=['numpy',
                       'networkx',
                       'scipy',
