@@ -14,7 +14,6 @@ import scipy as sp
 from hidef import weaver
 from hidef.utils import *
 from hidef import LOGGER
-from networkx.algorithms.community import k_clique_communities #TODO: can remove
 import multiprocessing as mp
 
 
@@ -113,8 +112,6 @@ class ClusterGraph(nx.Graph): # inherit networkx digraph
                 for i in range(len(id_new)):
                     newedges.append((id_new[i], id_r[i]))
 
-        # print('add {:d} new edges'.format(len(newedges)))
-        # for ni, i, s in newedges:
         self.add_edges_from(newedges)
 
         for nci in range(len(new_clusters)):
@@ -125,7 +122,7 @@ class ClusterGraph(nx.Graph): # inherit networkx digraph
             self.nodes[ni]['data'] = nc # is it a pointer?
             # self.nodes[ni]['data'].index = ni
 
-def run_alg(G, alg, gamma=1.0):
+def run_alg(G, alg, gamma=1.0, sample=1.0):
     '''
     Run community detection algorithm with a resolution parameter. Right now only use RB in Louvain/Leiden
 
@@ -143,12 +140,15 @@ def run_alg(G, alg, gamma=1.0):
         The parition object in Louvain or Leiden packages
 
     '''
+    G1 = G.copy()
+    if sample < 1:
+        G1 = network_perturb(G, sample)
     if alg =='louvain':
         partition_type = louvain.RBConfigurationVertexPartition
-        partition = louvain.find_partition(G, partition_type, resolution_parameter=gamma)
+        partition = louvain.find_partition(G1, partition_type, resolution_parameter=gamma)
     elif alg == 'leiden':
         partition_type = leidenalg.RBConfigurationVertexPartition
-        partition = leidenalg.find_partition(G, partition_type, resolution_parameter=gamma)
+        partition = leidenalg.find_partition(G1, partition_type, resolution_parameter=gamma)
     # partition = sorted(partition, key=len, reverse=True)
     LOGGER.info('Resolution: {:.4f}; find {} clusters'.format(gamma, len(partition)))
 
@@ -297,7 +297,7 @@ def run(G,
     resolution_graph = nx.Graph()
 
     # perform two initial louvain
-    minres_partition = run_alg(G, alg, minres)
+    # minres_partition = run_alg(G, alg, minres)
 
     LOGGER.timeit('_resrange')
     LOGGER.info('Finding maximum resolution...')
@@ -329,9 +329,7 @@ def run(G,
                 last_move = 'down'
             else:
                 next=False
-        maxres_partition = test_partition
-    else:
-        maxres_partition = run_alg(G, alg, maxres)
+
     stack_res_range = []
     LOGGER.info('Lower bound of resolution parameter: {:.4f}'.format(minres))
     LOGGER.info('Upper bound of resolution parameter: {:.4f}'.format(maxres))
@@ -339,10 +337,8 @@ def run(G,
 
     _ = update_resolution_graph(resolution_graph, minres, density, neighbors)
     _ = update_resolution_graph(resolution_graph, maxres, density, neighbors)
-    # cluG.add_clusters(resolution_graph, minres)
-    # cluG.add_clusters(resolution_graph, maxres)
-    LOGGER.report('Resolution range initialized in %.2fs', '_resrange')
 
+    LOGGER.report('Resolution range initialized in %.2fs', '_resrange')
 
     # parallel: determine a sequence of resolutions
     all_resolutions = [minres, maxres]
@@ -364,22 +360,15 @@ def run(G,
 
         stack_res_range.append((current_range[0], new_resolution))
         stack_res_range.append((new_resolution, current_range[1]))
-        # if sample<1:
-        #     G1 = network_perturb(G, sample)
-        #     new_partition = run_alg(G1, alg, new_resolution)
-        # else:
-        all_resolutions.append(new_resolution)
-            # new_partition = run_alg(G, alg, new_resolution)
 
-        # LOGGER.info('Resolution:' + resname_new + '; find {} clusters'.format(len(new_partition)))
+        all_resolutions.append(new_resolution)
 
         _ = update_resolution_graph(resolution_graph, new_resolution, density, neighbors)
 
         # cluG.add_clusters(resolution_graph, new_resolution)
 
     # run community detection for each resolution
-    all_resolutions.sort()
-    _arg_tuples = [(G, alg, res) for res in all_resolutions]
+    _arg_tuples = [(G, alg, res, sample) for res in all_resolutions]
     with mp.Pool(processes = mp.cpu_count()) as pool:
         results = pool.starmap(run_alg, _arg_tuples) # results contains "partition" class
     for i in range(len(all_resolutions)):
@@ -415,6 +404,7 @@ def consensus(cluG, k=5,  f=1.0, p=100):
     collapse_cluster_graph
 
     '''
+    from networkx.algorithms.community import k_clique_communities
 
     components = [c for c in nx.connected_components(cluG) if len(c)>= k]
     components = sorted(components, key=len, reverse=True)
