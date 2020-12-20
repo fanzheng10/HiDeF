@@ -253,7 +253,7 @@ def run(G,
         sample=0.9,
         minres=0.01,
         maxres=10,
-        alg='louvain',
+        alg='leiden',
         maxn=None,
         density=0.1,
         neighbors=10):
@@ -622,7 +622,7 @@ if __name__ == '__main__':
     par.add_argument('--s', type=float, default=1.0, help='A subsample parameter') # cdaps not-expose
     par.add_argument('--p', default=75, type=int, help='The p parameter; the consensus threshold collapsing community graph and choose representative genes for each community ensemble') # Consensus threshold.
     par.add_argument('--o', required=True, help='output file in ddot format')
-    par.add_argument('--alg', default='louvain', choices=['louvain', 'leiden'], help='accept louvain or leiden')
+    par.add_argument('--alg', default='leiden', choices=['louvain', 'leiden'], help='accept louvain or leiden')
     par.add_argument('--iter', action='store_true', help='iterate weave function until fully converge')
     par.add_argument('--skipgml', action='store_true', help='If True, skips output of gml file')
     par.add_argument('--keepclug', action='store_true', help='If True, output of cluG file')

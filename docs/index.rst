@@ -31,6 +31,13 @@ HiDeF is separately distributed via the `CDAPS <http://apps.cytoscape.org/apps/c
 .. Note::
    We try to maintain timely synchronization of the HiDeF versions across the Python package and Cytoscape. However, it may be possible to have small difference in results across the platforms due to the Cytoscape version is behind the latest version of the Python package.
 
+What's new
+___________
+
+Version 1.1:
+
+- community detection with multiple resolutions now run in parallel with python multiprocessing module
+- default algorithm changed to Leiden as it is faster than Louvain
 
 Tutorials
 _________
