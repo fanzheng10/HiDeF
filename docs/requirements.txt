@@ -1,0 +1,6 @@
+leidenalg==0.7.0
+louvain==0.6.1
+networkx==2.3
+numpy==1.19.2
+pandas==0.25.1
+scipy==1.3.1

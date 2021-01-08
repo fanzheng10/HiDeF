@@ -6,9 +6,8 @@ import itertools
 from itertools import product as iproduct
 from sys import getrecursionlimit, setrecursionlimit
 
+from hidef.utils import *
 from hidef import LOGGER
-
-__all__ = ['Weaver', 'weave']
 
 istuple = lambda n: isinstance(n, tuple)
 isdummy = lambda n: None in n
@@ -16,11 +15,8 @@ internals = lambda T: (node for node in T if istuple(node))
 RECURSION_MAX_DEPTH = int(10e6)
 
 class Weaver(object):
-    """
-    Class for constructing a hierarchical representation of a graph 
-    based on (a list of) input partitions. 
-
-    """
+    """Class for constructing a hierarchical representation of a graph
+    based on (a list of) input partitions. """
 
     __slots__ = ['_assignment', '_terminals', 'assume_levels', 'hier', '_levels', '_labels',
                  '_full', '_secondary']
@@ -85,7 +81,7 @@ class Weaver(object):
         return mapping
 
     def get_levels(self):
-        """Returns the levels (ordered ascendingly) in the hierarchy."""
+        # """Returns the levels (ordered ascendingly) in the hierarchy."""
 
         if self.hier is None:
             raise ValueError('hierarchy not built. Call weave() first')
@@ -101,8 +97,23 @@ class Weaver(object):
         levels.sort()
         return levels
 
-    def some_node(self, level):
-        """Returns the first node that is associated with the partition specified by level."""
+    # NEW
+    # def optimal_disjoint_nodes(self, feature='index', min_size=4, mode=''):
+    #     '''
+    #
+    #     :return:
+    #     '''
+    #     if self.hier is None:
+    #         raise ValueError('hierarchy not built. Call weave() first')
+    #
+    #     T = self.hier
+    #     # nodesAt5 = [x for x, y in T.nodes(data=True) if y['feature'] == 5]
+    #
+    #     # select high stability and avoid parent and children. Have a minimum, and have a tolerance
+
+
+    def some_node_from_level(self, level):
+        # """Returns the first node that is associated with the partition specified by level."""
 
         if self.hier is None:
             raise ValueError('hierarchy not built. Call weave() first')
@@ -113,7 +124,8 @@ class Weaver(object):
             if T.nodes[node]['level'] == level:
                 return node
 
-    def weave(self, partitions, terminals=None, boolean=False, levels=False, **kwargs):
+
+    def weave(self, partitions, terminals=None, boolean=True, levels=False, **kwargs):
         """Finds a directed acyclic graph that represents a hierarchy recovered from 
         partitions.
 
@@ -142,9 +154,8 @@ class Weaver(object):
             set to True, only the clusters labelled as True will be considered 
             as a parent in the hierarchy.
         
-        merge: keyword argument, optional (default=False)
+        merge : keyword argument, optional (default=False)
             whether merge similar clusters. if one cluster is contained in another cluster (determined by "cutoff" oarameter) and vice versa, these two clusters deemed to be very similar. if set to true, such clusters groups will be merged into one (take union)
-        
         
         top : keyword argument (0 ~ 100, default=100)
             top x percent (alternative) edges to be kept in the hierarchy. This parameter 
@@ -152,13 +163,8 @@ class Weaver(object):
             edges. Note that if top=0 then each node will only have exactly one parent 
             (except for the root which has none). 
 
-        cutoff : keyword argument (0.5 ~ 1.0, default=0.8)
-            containment index cutoff for claiming parenthood. c
-
-        See Also
-        --------
-        build
-        pick
+        cutoff : keyword argument (0.5 ~ 1.0, default=0.75)
+            containment index cutoff for claiming parenthood.
 
         Returns
         -------
@@ -232,8 +238,9 @@ class Weaver(object):
 
         Parameters
         ----------
-        cutoff : keyword argument (0.5 ~ 1.0, default=0.8)
-            containment index cutoff for claiming parenthood. 
+        cutoff : keyword argument (0.5 ~ 1.0, default=0.75)
+            containment index cutoff for claiming parenthood.
+        merge : bool
 
         Returns
         -------
@@ -241,7 +248,7 @@ class Weaver(object):
             
         """
 
-        cutoff = kwargs.pop('cutoff', 0.8)
+        cutoff = kwargs.pop('cutoff', 0.75)
         merge = kwargs.pop('merge', False)
 
         assume_levels = self.assume_levels
@@ -276,7 +283,6 @@ class Weaver(object):
             if not G.has_node(nb):
                 G.add_node(nb, index=j, level=levels[j], label=labels[j])
 
-            # TODO: hope to collapse bi-directional edges
             if C >= cutoff:
                 if not merge:
                     if G.has_edge(na, nb):
@@ -296,7 +302,11 @@ class Weaver(object):
                 all_in_nodes, all_out_nodes = [], []
                 vs = list(vs)
                 vs = sorted(vs, key = lambda x:G.nodes[x]['index'])
+
+                # add merge record
+                new_index = []
                 for v in vs:
+                    new_index.append(G.nodes[v]['index'])
                     all_in_nodes.extend([w for w in G.predecessors(v)])
                     all_out_nodes.extend([w for w in G.successors(v)])
                 all_in_nodes = list(set(all_in_nodes).difference(vs))
@@ -317,7 +327,7 @@ class Weaver(object):
                             dict_out_weights[w] = G[v][w]['weight']
 
                 G.remove_nodes_from(vs[1:])
-
+                G.nodes[vs[0]]['index'] = tuple(new_index) # TODO: why does this has to be a tuple?
                 for u in all_in_nodes:
                     if not G.has_predecessor(vs[0], u):
                         G.add_edge(u, vs[0], weight=dict_in_weights[u])
@@ -330,23 +340,22 @@ class Weaver(object):
             LOGGER.timeit('_cluster_redundancy')
             LOGGER.info('"merge" parameter set to true, so merging redundant clusters...')
 
-            cycles = []
             try:
                 cycles = list(nx.simple_cycles(G))
+                # LOGGER.info('Merge {} redundant groups ...'.format(len(cycles)))
             except:
-                LOGGER.info('No cycle has been found ...')
+                LOGGER.info('No redundant groups has been found ...')
+                cycles = []
             if len(cycles) > 0:
                 Gcyc = nx.Graph()
                 for i in range(len(cycles)):
                     for v, w in itertools.combinations(cycles[i], 2):
                         Gcyc.add_edge(v, w)
                 components = list(nx.connected_components(Gcyc))
+                LOGGER.info('Merge {} redundant groups ...'.format(len(components)))
                 for vs in components:
                     G = _collapse_nodes(G, vs, )
-                try:
-                    cycles = list(nx.simple_cycles(G))
-                except:
-                    LOGGER.info('No more cycle has been found ...')
+
             LOGGER.report('redundant nodes removed in %.2fs', '_cluster_redundancy')
 
         # add a root node to the graph
@@ -380,17 +389,6 @@ class Weaver(object):
                         redundant.append((a, node))
                         break
 
-        # rcl = getrecursionlimit()
-        # if rcl < RECURSION_MAX_DEPTH:
-        #     setrecursionlimit(RECURSION_MAX_DEPTH)
-
-        # for u, v in G.edges():
-        #     if n_simple_paths(G, u, v) > 1:
-        #         redundant.append((u, v))
-
-        # setrecursionlimit(rcl)
-
-        #nx.write_edgelist(G, 'sample_granny_network.txt')
         G.remove_edges_from(redundant)
         LOGGER.report('redundant edges removed in %.2fs', '_redundancy')
 
@@ -431,7 +429,7 @@ class Weaver(object):
 
         # update node assignments
         LOGGER.timeit('_update')
-        LOGGER.info('propagate terminal node assignments upward in the hierarchy')
+        LOGGER.info('propagate terminal node assignments upward in the hierarchy') # TODO: this can be iterated until there's no change
         L_sp = sp.sparse.csr_matrix(L.T)
 
         ## construct a community connectivity matrix
@@ -476,16 +474,6 @@ class Weaver(object):
             parents = [_ for _ in G.predecessors(node)]
             if len(parents) > 1:
                 nsize = node_size(node)
-                #weights = [G.edges()[p, node]['weight'] for p in parents]
-
-                # preference if multiple best
-                # if self.assume_levels:
-                #     pref = [G.nodes[p]['index'] for p in parents]
-                # else:
-                #     pref = []
-                #     for p in parents:
-                #         nsize = -self.node_size(p) # use negative size to sort in ascending order when reversed
-                #         pref.append(nsize)
                 pref = []
                 for p in parents:
                     w = G.edges()[p, node]['weight'] 
@@ -513,7 +501,7 @@ class Weaver(object):
 
         Parameters
         ----------
-        top : keyword argument (0 ~ 100, default=100)
+        top : int or float (0 ~ 100, default=100)
             top x percent (alternative) edges to be kept in the hierarchy. This parameter 
             controls the number of parents each node has based on a global ranking of the 
             edges. Note that if top=0 then each node will only have exactly one parent 
@@ -530,7 +518,6 @@ class Weaver(object):
 
         G = self._full.copy()
 
-        #W = [x[1] for x in self._secondary]
         secondary = [x[0] for x in self._secondary]
 
         if top == 0:
@@ -541,16 +528,48 @@ class Weaver(object):
             removed_edges = secondary[n:]
             G.remove_edges_from(removed_edges)
 
-        # prune tree
 
-        self.hier = prune(G)
-        # self.hier = G
+        # self.hier = prune(G)
+        self.hier = G
 
         # update attributes
         self.update_depths()
         self.relabel()
         
         return self.hier
+
+    # NEW
+    def delete_nodes(self, nodes, relabel=False):
+        '''
+        Delete some nodes from the hierarchy. This approach can be used to delete those with low persistence and rebuild a simpler hierarchy.
+
+        Parameters
+        ----------
+        nodes :  a list of string
+            names of the cluster to delete.
+        relabel : bool (default = False)
+            if True, rename nodes. Setting to False may be easier to track the cluster identities.
+        '''
+        G = self.hier
+        if G is None:
+            raise ValueError('hierarchy not built. Call weave() first')
+        for u in nodes:
+            all_in_nodes = G.predecessors(u)
+            all_out_nodes = G.successors(u)
+            new_edge_pairs = [(a, b) for a, b in itertools.product(all_in_nodes, all_out_nodes)]
+            G.add_edges_from(new_edge_pairs) # TODO: right now edges store some information about containment index, not seen from here
+            G.remove_node(u)
+        self.hier = G
+
+        self.update_depths()
+        if relabel:
+            self.relabel()
+
+        return
+
+    # def select_nodes():
+
+
 
     def get_root(self):
         G = self.hier
@@ -660,7 +679,7 @@ class Weaver(object):
         
         return show_hierarchy(T, nodelist=nodelist, **kwargs)
 
-    def node_cluster(self, node, out=None):
+    def node_cluster(self, node, out=None): # TODO: this is useful, but hope to test it
         """Recovers the cluster represented by a node in the hierarchy.
 
         Returns
@@ -783,9 +802,11 @@ class Weaver(object):
 
         Parameters
         ----------
-        filename : the path and name of the output file.
+        filename : str
+            the path and name of the output file.
 
-        format : output format. Available options are "ddot".
+        format : str
+            output format. Available options are "ddot".
             
         """
 
@@ -815,85 +836,8 @@ class Weaver(object):
             nx.write_edgelist(G, f, delimiter='\t', data=['type'])
 
 
-def containment_indices_legacy(A, B):
-    from collections import defaultdict
-
-    n = len(A)
-    counterA  = defaultdict(int)
-    counterB  = defaultdict(int)
-    counterAB = defaultdict(int)
-
-    for i in range(n):
-        a = A[i]; b = B[i]
-
-        counterA[a] += 1
-        counterB[b] += 1
-        counterAB[(a, b)] += 1
-
-    LA = [l for l in counterA]
-    LB = [l for l in counterB]
-
-    CI = np.zeros((len(LA), len(LB)))
-    for i, a in enumerate(LA):
-        for j, b in enumerate(LB):
-            CI[i, j] = counterAB[(a, b)] / counterA[a]
-
-    return CI, LA, LB
-
-def containment_indices(A, B):
-    from collections import defaultdict
-
-    A = np.asarray(A)
-    B = np.asarray(B)
-
-    LA = np.unique(A)
-    LB = np.unique(B)
-
-    bA = np.zeros((len(LA), len(A)))
-    for i, a in enumerate(LA):
-        bA[i] = A == a
-    
-    bB = np.zeros((len(LB), len(B)))
-    for i, b in enumerate(LB):
-        bB[i] = B == b
-
-    overlap = bA.dot(bB.T)
-    count = bA.sum(axis=1)
-    CI = overlap / count[:, None]
-
-    return CI, LA, LB
-
-def containment_indices_boolean(A, B):
-    count = np.count_nonzero(A, axis=1)
-
-    A = A.astype(float)
-    B = B.astype(float)
-    overlap = A.dot(B.T)
-    
-    CI = overlap / count[:, None]
-    return CI
-
-def containment_indices_sparse(A, B, sparse=False):
-    '''
-    calculate containment index for all clusters in A in all clusters in B
-    :param A: a numpy matrix, axis 0 - cluster; axis 1 - nodes
-    :param B: a numpy matrix, axis 0 - cluster; axis 1 - nodes
-    :return: a sparse matrix with containment index; calling row/column/data for individual pairs
-    '''
-    if not sparse:
-        Asp = sp.sparse.csr_matrix(A)
-        Bsp = sp.sparse.csr_matrix(B)
-    else:
-        Asp = A
-        Bsp = B
-    both = np.asarray(np.sum(Asp.multiply(Bsp), axis=1)).ravel()
-    countA =  Asp.getnnz(axis=1) # this is dense matrix
-    contain = 1.0 * both/countA
-    # print(both, countA, contain)
-    return contain
-
 def all_equal(iterable):
-    "Returns True if all the elements are equal to each other"
+    #Returns True if all the elements are equal to each other
 
     from itertools import groupby
 
@@ -901,7 +845,7 @@ def all_equal(iterable):
     return next(g, True) and not next(g, False)
 
 def boolize(x):
-    "Converts x to boolean"
+    #Converts x to boolean
 
     if not isinstance(x, bool):
         x = bool(int(x))
@@ -954,9 +898,15 @@ def get_root(T):
 
     return None
 
-def prune(T):
-    """Removes the nodes with only one child and the nodes that have no terminal 
-    nodes (e.g. genes) as descendants. (This basically removes identical clusters)"""
+def prune(T): # TODO: this can be deprecated
+    '''
+    Removes the nodes with only one child and the nodes that have no terminal
+    nodes (e.g. genes) as descendants. (This basically removes identical clusters)
+
+    Parameters
+    ----------
+    T: a weaver object
+    '''
 
     # prune tree
     # remove dead-ends
@@ -1029,20 +979,20 @@ def traverse_topdown(T, mode='breadth'):
         yield node
 
 def stuff_dummies(hierarchy):
-    """Puts dummy nodes into the hierarchy. The dummy nodes are used 
-    in `show_hierarchy` when `assume_level` is True.
-
-    Returns
-    -------
-    T : networkx.DiGraph
-        An hierarchy with dummy nodes added.
-
-    Raises
-    ------
-    ValueError
-        If hierarchy has not been built.
-
-    """
+    # """Puts dummy nodes into the hierarchy. The dummy nodes are used
+    # in `show_hierarchy` when `assume_level` is True.
+    #
+    # Returns
+    # -------
+    # T : networkx.DiGraph
+    #     An hierarchy with dummy nodes added.
+    #
+    # Raises
+    # ------
+    # ValueError
+    #     If hierarchy has not been built.
+    #
+    # """
 
     T = hierarchy.copy()
 
@@ -1088,8 +1038,12 @@ def stuff_dummies(hierarchy):
     
     return T
 
+
+# TODO: make this using dash
 def show_hierarchy(T, **kwargs):
-    """Visualizes the hierarchy"""
+    #TODO: dependency here is not declared
+    #TODO: node label?
+    """Visualizes the hierarchy in notebook"""
 
     from networkx.drawing.nx_pydot import write_dot, graphviz_layout
     from networkx import draw, get_edge_attributes, draw_networkx_edge_labels
@@ -1109,7 +1063,7 @@ def show_hierarchy(T, **kwargs):
     if isWindows:
         style += '.exe'
 
-    if not leaf:
+    if not leaf: # TODO: leaf false has a bug
         T2 = T.subgraph(n for n in T.nodes() if istuple(n))
         if 'nodelist' in kwargs:
             nodes = kwargs.pop('nodelist')
@@ -1193,26 +1147,3 @@ def show_hierarchy(T, **kwargs):
         cid = fig.canvas.mpl_connect('button_press_event', _onclick)
 
     return T2, pos
-
-def weave(partitions, terminals=None, **kwargs):
-    weaver = Weaver()
-    weaver.weave(partitions, terminals, **kwargs)
-
-    return weaver
-
-if __name__ == '__main__':
-    from pylab import *
-
-    P = ['11111111',
-         '11111100',
-         '00001111',
-         '11100000',
-         '00110000',
-         '00001100',
-         '00000011']
-    P = [list(p) for p in P]
-
-    nodes = 'ABCDEFGH'
-
-    w = Weaver()
-    T = w.weave(P, boolean=True, terminals=nodes, cutoff=0.9, top=10)

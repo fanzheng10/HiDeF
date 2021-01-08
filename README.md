@@ -1,13 +1,16 @@
 # HiDeF (Hierarchical community Decoding Framework)
+[![Documentation Status](https://readthedocs.org/projects/hidef/badge/?version=latest)](https://hidef.readthedocs.io/en/latest/?badge=latest)
 
-<img src="https://github.com/fanzheng10/HiDeF/blob/master/fig1.png" width="600">
+
+<img src="https://github.com/fanzheng10/HiDeF/blob/master/fig1.png" width="400">
 
 ## Introduction
 
 HiDeF is an analysis framework to robustly resolve the hierarchical structures of networks based on multiscale community detection and the concepts of persistent homology. 
 
 HiDeF is described in the following manuscript:  
-Fan Zheng, She Zhang, Christopher Churas, Dexter Pratt, Ivet Bahar, Trey Ideker. Submitted (2020) [Preprint](https://doi.org/10.1101/2020.06.16.151555)
+
+F Zheng, S Zhang, C Churas, D Pratt, I Bahar, T Ideker (2020). HiDeF: identifying persistent structures in multiscale omics data. Accepted by Genome Biology.
 
 ## Dependencies
 
@@ -20,21 +23,22 @@ scipy
 pandas
 
 ## Installation
+
+From source:  
 `python setup.py install`
 
 ## Usage
 
-### Running HiDeF from Cytoscape (Recommended)
+### Running HiDeF from Cytoscape
 
-HiDeF has been fully integrated with the [Cytoscape](https://cytoscape.org/) environment, via our recently released [Community Detection APplication and Service (CDAPS)](http://apps.cytoscape.org/apps/cycommunitydetection) framework. Documentations can be found in the link above.
+HiDeF has been fully integrated with the [Cytoscape](https://cytoscape.org/) platform, via our recently published [Community Detection APplication and Service (CDAPS)](https://doi.org/10.1371/journal.pcbi.1008239) framework.
 
-By using this option, users can leverage the computing power of [National Resources of Network Biology (NRNB)](https://nrnb.org/) for the HiDeF analysis, and enjoy other nice features provided in the CDAPS framework, including (1) interact with the source network to visualize the subnetwork of any detected community (2) perform gene set enrichment analysis (when the vertices of the source network are proteins/genes) (3) store and share the models via the [NDEx](http://www.ndexbio.org/) database.
+With this option users can access unique features in the CDAPS framework, including (1) interacting with the source network to visualize the subnetwork of any detected community (2) performing gene set enrichment analysis (when the vertices of the source network are proteins/genes) (3) sharing the models via the [NDEx](http://www.ndexbio.org/) database.
 
 
-### Running HiDeF as a command-line tool (Recommended for big input networks)
+### Running HiDeF as a command-line tool
 
 Using the codes in this repository, HiDeF can be used as a command-line tool. There are two main components of the scripts: `hidef_finder.py` and `weaver.py`.
-
 
 To sweep the resolution profile and generate an optimized hierarchy based on pan-resolution community persistence, run the following command in a terminal: 
 
@@ -52,38 +56,29 @@ Other auxiliary parameters are explained in the manuscript.
 - `$out.edges`: A TSV file describing the parent-child relationships of communities in the hierarchy. The parent communities are in the 1st column and the children communities are in the 2nd column.  
 - `$out.gml`: A file in the GML format that can be opened in Cytoscape to visualize the hierarchy (using "yFiles hierarchic layout" in Cytoscape)
 
-#### Integration with ScanPy
-
-We provide a Jupyter notebook to demonstrate how to integrate the results of HiDeF with popular single-cell data analysis framework (here [ScanPy](https://scanpy.readthedocs.io/en/stable/)). 
 
 ### Using HiDeF as a python package
+
+For documents (in construction), please see [https://hidef.readthedocs.io](https://hidef.readthedocs.io).
 
 The following example shows how to build a hierarchical view of a network based on pre-computed communities, by using HiDeF as a Python package. This workflow only involves `weaver.py`.
 
 First, the user needs to provide the clustering results on these data points. These results may be obtained from any multilevel clustering algorithm of the user's choice. In this example, suppose we have 8 data points and define 7 ways of partitioning them (in a Python terminal), 
 
 ```
->>> P = ['11111111',
-...      '11111100',
-...      '00001111',
-...      '11100000',
-...      '00110000',
-...      '00001100',
-...      '00000011']
-```
-
-The labels of these nodes are assigned as follows (optional):
-
-```
->>> nodes = 'ABCDEFGH'
+P = ['11111111',
+  '11111100',
+  '00001111',
+  '11100000',
+  '00110000',
+  '00001100',
+  '00000011']
 ```
 
 Then the hierarchical view can be obtained by
 
 ```
->>> from hidef import weaver
->>> weaver = Weaver(P, boolean=True, terminals=nodes, assume_levels=False)
->>> T = weaver.weave(cutoff=0.9, top=10)
+from hidef import weaver
+wv = weaver.Weaver()
+H = wv.weave(P, cutoff=1.0)
 ```
-
-The hierarchy is represented by a `networkx.DiGraph` object, which can be obtained by querying `T.hier`. `T` also contains a lot of useful functions for extracting useful information about the hierarchy. 
