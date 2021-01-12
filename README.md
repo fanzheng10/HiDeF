@@ -10,7 +10,7 @@ HiDeF is an analysis framework to robustly resolve the hierarchical structures o
 
 HiDeF is described in the following manuscript:  
 
-F Zheng, S Zhang, C Churas, D Pratt, I Bahar, T Ideker (2020). HiDeF: identifying persistent structures in multiscale omics data. Accepted by Genome Biology.
+Zheng, F., Zhang, S., Churas, C. et al. HiDeF: identifying persistent structures in multiscale ‘omics data. Genome Biol 22, 21 (2021). https://doi.org/10.1186/s13059-020-02228-4
 
 ## Dependencies
 
