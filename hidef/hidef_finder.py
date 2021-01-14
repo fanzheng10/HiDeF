@@ -256,7 +256,8 @@ def run(G,
         alg='leiden',
         maxn=None,
         density=0.1,
-        neighbors=10):
+        neighbors=10,
+        numthreads=mp.cpu_count()):
     '''
     Main function to run the Finder program
 
@@ -281,6 +282,8 @@ def run(G,
     neighbors: int
         also affect sampling density; a larger value may have additional benefits of stabilizing clustering results
     bisect: deprecated
+    numthreads: int
+        Number of threads to run in parallel. Default is set to number of cores.
 
     Returns
     ----------
@@ -369,8 +372,8 @@ def run(G,
 
     # run community detection for each resolution
     _arg_tuples = [(G, alg, res, sample) for res in all_resolutions]
-    with mp.Pool(processes = mp.cpu_count()) as pool:
-        results = pool.starmap(run_alg, _arg_tuples) # results contains "partition" class
+    with mp.Pool(processes=numthreads) as pool:
+        results = pool.starmap(run_alg, _arg_tuples)  # results contains "partition" class
     for i in range(len(all_resolutions)):
         nodename = '{:.4f}'.format(all_resolutions[i])
         resolution_graph.nodes[nodename]['matrix'] = results[i]
@@ -626,7 +629,7 @@ if __name__ == '__main__':
     par.add_argument('--iter', action='store_true', help='iterate weave function until fully converge')
     par.add_argument('--skipgml', action='store_true', help='If True, skips output of gml file')
     par.add_argument('--keepclug', action='store_true', help='If True, output of cluG file')
-
+    par.add_argument('--numthreads', type=int, help='Number of parallel threads to use. If zero or less or unset, value from multiprocessing.cpu_count() is used')
 
     args = par.parse_args()
 
@@ -635,6 +638,10 @@ if __name__ == '__main__':
     if args.n != None:
         args.n = args.n + len(G_component) - 1
 
+    if args.numthreads is None or args.numthreads <= 0:
+        num_threads = mp.cpu_count()
+    else:
+        num_threads = args.numthreads
     # explore the resolution parameter given the number of clusters
 
     cluG = run(G,
@@ -644,7 +651,8 @@ if __name__ == '__main__':
                minres=args.minres,
                maxres=args.maxres,
                maxn=args.n,
-               alg=args.alg
+               alg=args.alg,
+               numthreads=num_threads,
                )
     # # use weaver to organize them (due to the previous collapsed step, need to re-calculate containment index. This may be ok
     # components = sorted(nx.connected_components(cluG), key=len, reverse=True)
