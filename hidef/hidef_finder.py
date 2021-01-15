@@ -629,10 +629,11 @@ if __name__ == '__main__':
     par.add_argument('--iter', action='store_true', help='iterate weave function until fully converge')
     par.add_argument('--skipgml', action='store_true', help='If True, skips output of gml file')
     par.add_argument('--keepclug', action='store_true', help='If True, output of cluG file')
-    par.add_argument('--numthreads', type=int, help='Number of parallel threads to use. '
-                                                    'If value exceeds multiprocessing.cpu_count(), is '
-                                                    ' unset, is zero, or is negative '
-                                                    'then multiprocessing.cpu_count() will be used. ')
+    par.add_argument('--numthreads', type=int,
+                     help='Number of child threads to spawn for clustering. '
+                          'If value exceeds multiprocessing.cpu_count(), is '
+                          ' unset, is zero, or is negative '
+                          'then multiprocessing.cpu_count() will be used.')
 
     args = par.parse_args()
 
