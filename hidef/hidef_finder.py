@@ -629,7 +629,10 @@ if __name__ == '__main__':
     par.add_argument('--iter', action='store_true', help='iterate weave function until fully converge')
     par.add_argument('--skipgml', action='store_true', help='If True, skips output of gml file')
     par.add_argument('--keepclug', action='store_true', help='If True, output of cluG file')
-    par.add_argument('--numthreads', type=int, help='Number of parallel threads to use. If zero or less or unset, value from multiprocessing.cpu_count() is used')
+    par.add_argument('--numthreads', type=int, help='Number of parallel threads to use. '
+                                                    'If value exceeds multiprocessing.cpu_count(), is '
+                                                    ' unset, is zero, or is negative '
+                                                    'then multiprocessing.cpu_count() will be used. ')
 
     args = par.parse_args()
 
@@ -638,7 +641,7 @@ if __name__ == '__main__':
     if args.n != None:
         args.n = args.n + len(G_component) - 1
 
-    if args.numthreads is None or args.numthreads <= 0:
+    if args.numthreads is None or args.numthreads <= 0 or args.numthreads > mp.cpu_count():
         num_threads = mp.cpu_count()
     else:
         num_threads = args.numthreads
