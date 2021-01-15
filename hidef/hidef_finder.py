@@ -631,9 +631,8 @@ if __name__ == '__main__':
     par.add_argument('--keepclug', action='store_true', help='If True, output of cluG file')
     par.add_argument('--numthreads', type=int,
                      help='Number of child threads to spawn for clustering. '
-                          'If value exceeds multiprocessing.cpu_count(), is '
-                          ' unset, is zero, or is negative '
-                          'then multiprocessing.cpu_count() will be used.')
+                          'Value of multiprocessing.cpu_count() will be used '
+                          'if NUMTHREADS is not set, is zero, or is negative')
 
     args = par.parse_args()
 
