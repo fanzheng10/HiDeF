@@ -1,8 +1,5 @@
 #! /usr/bin/env python
 
-import louvain
-import leidenalg
-
 import networkx as nx
 import igraph as ig
 import argparse
@@ -11,6 +8,13 @@ import pickle
 import numpy as np
 import pandas as pd
 import scipy as sp
+
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    import louvain
+import leidenalg
+
 from hidef import weaver
 from hidef.utils import *
 from hidef import LOGGER
