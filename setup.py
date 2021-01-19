@@ -14,7 +14,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='hidef',
-    version='1.1.1',
+    version='1.1.2',
     description='A package for building a hierarchy based on multiple partitions on graph nodes.', 
     long_description=long_description,  
 
