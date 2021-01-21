@@ -14,10 +14,10 @@ Zheng, F., Zhang, S., Churas, C. et al. HiDeF: identifying persistent structures
 
 ## Dependencies
 
-[networkx](https://networkx.github.io/) 2.3  
-[python-igraph](https://igraph.org/python/) 0.7.1  
-[louvain-igraph](https://github.com/vtraag/louvain-igraph) 0.6.1  
-[leidenalg](https://github.com/vtraag/leidenalg)    0.7.0  
+[networkx](https://networkx.github.io/) >= 2.3  
+[python-igraph](https://igraph.org/python/) >= 0.7.1  
+[louvain-igraph](https://github.com/vtraag/louvain-igraph) >= 0.6.1  
+[leidenalg](https://github.com/vtraag/leidenalg) >= 0.7.0  
 numpy  
 scipy  
 pandas
