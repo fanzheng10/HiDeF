@@ -12,17 +12,10 @@ HiDeF is described in the following manuscript:
 
 Zheng, F., Zhang, S., Churas, C. et al. HiDeF: identifying persistent structures in multiscale ‘omics data. Genome Biol 22, 21 (2021). https://doi.org/10.1186/s13059-020-02228-4
 
-## Dependencies
+## Installation (Python package)
 
-[networkx](https://networkx.github.io/) >= 2.3  
-[python-igraph](https://igraph.org/python/) >= 0.7.1  
-[louvain-igraph](https://github.com/vtraag/louvain-igraph) >= 0.6.1  
-[leidenalg](https://github.com/vtraag/leidenalg) >= 0.7.0  
-numpy  
-scipy  
-pandas
-
-## Installation
+With pip:  
+`pip install hidef`
 
 From source:  
 `python setup.py install`
@@ -31,12 +24,16 @@ From source:
 
 ### Running HiDeF from Cytoscape
 
+Best for small/medium networks < 10k nodes and < 50k edges.
+
 HiDeF has been fully integrated with the [Cytoscape](https://cytoscape.org/) platform, via our recently published [Community Detection APplication and Service (CDAPS)](https://doi.org/10.1371/journal.pcbi.1008239) framework.
 
 With this option users can access unique features in the CDAPS framework, including (1) interacting with the source network to visualize the subnetwork of any detected community (2) performing gene set enrichment analysis (when the vertices of the source network are proteins/genes) (3) sharing the models via the [NDEx](http://www.ndexbio.org/) database.
 
-
 ### Running HiDeF as a command-line tool
+
+From source:  
+`python setup.py install`
 
 Using the codes in this repository, HiDeF can be used as a command-line tool. There are two main components of the scripts: `hidef_finder.py` and `weaver.py`.
 
@@ -59,7 +56,7 @@ Other auxiliary parameters are explained in the manuscript.
 
 ### Using HiDeF as a python package
 
-For documents (in construction), please see [https://hidef.readthedocs.io](https://hidef.readthedocs.io).
+For documents, please see [https://hidef.readthedocs.io](https://hidef.readthedocs.io).
 
 The following example shows how to build a hierarchical view of a network based on pre-computed communities, by using HiDeF as a Python package. This workflow only involves `weaver.py`.
 
