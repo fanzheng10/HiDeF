@@ -45,7 +45,8 @@ setup(
                       'networkx',
                       'scipy',
                       'pandas',
-                      'leidenalg'],
+                      'leidenalg',
+                      'sklearn'],
 
     project_urls={ 
         'Bug Reports': 'https://github.com/fanzheng10/HiDeF/issues',

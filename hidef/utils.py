@@ -1,6 +1,9 @@
+import os
 import numpy as np
 import pandas as pd
 from scipy.sparse import *
+from scipy.stats import *
+
 
 def network_perturb(G, sample=0.8):
     '''
@@ -20,7 +23,8 @@ def network_perturb(G, sample=0.8):
     G1.delete_edges(edges_to_remove)
     return G1
 
-def jaccard_matrix(matA, matB, threshold=0.75, return_mat=False): # assume matA, matB are sorted
+
+def jaccard_matrix(matA, matB, threshold=0.75, return_mat=False):  # assume matA, matB are sorted
     '''
     Calculate jaccard matrix between all pairs between two sets of clusters.
 
@@ -48,13 +52,14 @@ def jaccard_matrix(matA, matB, threshold=0.75, return_mat=False): # assume matA,
 
     both = matA.dot(matB.T)
 
-    either = (np.tile(matA.getnnz(axis=1), (matB.shape[0],1)) + matB.getnnz(axis=1)[:, np.newaxis]).T -both
-    jac = 1.0*both/either
+    either = (np.tile(matA.getnnz(axis=1), (matB.shape[0], 1)) + matB.getnnz(axis=1)[:, np.newaxis]).T - both
+    jac = 1.0 * both / either
     index = np.where(jac > threshold)
     if not return_mat:
         return index
     else:
         return index, jac
+
 
 def containment_indices(A, B):
     from collections import defaultdict
@@ -79,7 +84,8 @@ def containment_indices(A, B):
 
     return CI, LA, LB
 
-def containment_indices_boolean(A, B): # TODO: test sparse matrix here
+
+def containment_indices_boolean(A, B):  # TODO: test sparse matrix here
     '''
     Calculate a matrix of containment index for two lists of clusters
 
@@ -132,11 +138,55 @@ def node2mat(f, g2ind, format='node', has_persistence=False):
         else:
             raise ValueError('The format argument only accepts "node" or "clixo"')
         gsi = np.array([g2ind[g] for g in gs])
-        arr = np.zeros(n,)
+        arr = np.zeros(n, )
         arr[gsi] = 1
         mat.append(arr)
-    data = {'cluster':mat, 'name':df[0].tolist(), 'extra.data':None}
+    data = {'cluster': mat, 'name': df[0].tolist(), 'extra.data': None}
     if has_persistence:
         persistence = df[3].tolist()
         data['extra.data'] = persistence
     return data
+
+
+def data2graph(datafile, outfile=None, k=15, snn=-1, mydist='cosine'):
+    '''
+    take a dataframe [n_samples x n_features] as input, and output knn or snn graph
+
+    Parameters
+    ----------
+    datafile: str
+        input tsv file
+    outfile: str
+        file name of output edge list
+    k: int
+        number of neighbors for each sample
+    snn: float
+        a threshold of Jaccard index if going to calculate shared nearest neighbor graph
+    mydist: string or callable
+        distance metric to calculate neighbors
+    Returns
+    --------
+    idx: tuple of two numpy.array
+        the indices of entries of the output matrix
+    '''
+    assert os.path.isfile(outfile) is False
+    from sklearn.neighbors import kneighbors_graph
+    data = pd.read_csv(datafile, sep='\t', index_col=0)
+    data.fillna(0, inplace=True)
+    data_npy = np.array(data)
+
+    adj = kneighbors_graph(data_npy, n_neighbors=k, metric=mydist)  # note this is assymetric
+    nodes = data.index.tolist()
+    if snn > 0:
+        idx = jaccard_matrix(adj, adj, threshold=snn)
+    else:
+        idx = np.where(adj.todense() > 0)
+    if not (outfile is None):
+        with open(outfile, 'w') as fh:
+            for i in range(len(idx[0])):
+                if (snn > 0) and (idx[0][i] > idx[1][i]):
+                    continue
+                name1, name2 = nodes[idx[0][i]], nodes[idx[1][i]]
+
+                fh.write('{}\t{}\n'.format(name1, name2))
+    return idx
