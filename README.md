@@ -32,8 +32,7 @@ With this option users can access unique features in the CDAPS framework, includ
 
 ### Running HiDeF as a command-line tool
 
-From source:  
-`python setup.py install`
+First, install the package as instructed above.
 
 Using the codes in this repository, HiDeF can be used as a command-line tool. There are two main components of the scripts: `hidef_finder.py` and `weaver.py`.
 
