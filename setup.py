@@ -45,6 +45,7 @@ setup(
                       'networkx',
                       'scipy',
                       'pandas',
+                      'louvain'
                       'leidenalg',
                       'scikit-learn'],
 

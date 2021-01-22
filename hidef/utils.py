@@ -184,7 +184,7 @@ def data2graph(datafile, outfile=None, k=15, snn=-1, mydist='cosine'):
     if not (outfile is None):
         with open(outfile, 'w') as fh:
             for i in range(len(idx[0])):
-                if (snn > 0) and (idx[0][i] > idx[1][i]):
+                if (snn > 0) and (idx[0][i] >= idx[1][i]):
                     continue
                 name1, name2 = nodes[idx[0][i]], nodes[idx[1][i]]
 
