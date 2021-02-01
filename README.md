@@ -1,6 +1,6 @@
 # HiDeF (Hierarchical community Decoding Framework)
 [![Documentation Status](https://readthedocs.org/projects/hidef/badge/?version=latest)](https://hidef.readthedocs.io/en/latest/?badge=latest)
-
+[![Downloads](https://pepy.tech/badge/hidef)](https://pepy.tech/project/hidef)
 
 <img src="https://github.com/fanzheng10/HiDeF/blob/master/fig1.png" width="400">
 
