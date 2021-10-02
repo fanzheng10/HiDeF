@@ -6,7 +6,7 @@
 
 ## Introduction
 
-HiDeF is an analysis framework to robustly resolve the hierarchical structures of networks based on multiscale community detection and the concepts of persistent homology. 
+HiDeF is a method for robustly resolving the hierarchical structures of networks based on multiscale community detection and the concepts of persistent homology. 
 
 HiDeF is described in the following manuscript:  
 
