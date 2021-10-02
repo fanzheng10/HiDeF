@@ -10,7 +10,7 @@ HiDeF is a method for robustly resolving the hierarchical structures of networks
 
 HiDeF is described in the following manuscript:  
 
-Zheng, F., Zhang, S., Churas, C. et al. HiDeF: identifying persistent structures in multiscale ‘omics data. Genome Biol 22, 21 (2021). https://doi.org/10.1186/s13059-020-02228-4
+Zheng, F., Zhang, S., Churas, C. et al., [HiDeF: identifying persistent structures in multiscale ‘omics data](https://doi.org/10.1186/s13059-020-02228-4). Genome Biol 22, 21 (2021).
 
 ## Installation (Python package)
 
