@@ -11,7 +11,7 @@ def network_perturb(G, sample=0.8):
 
     Parameters
     ----------
-    G: input network
+    G: igraph input network
     sample: the fraction of edges to retain
 
     Returns
