@@ -1,16 +1,16 @@
 # HiDeF (Hierarchical community Decoding Framework)
 [![Documentation Status](https://readthedocs.org/projects/hidef/badge/?version=latest)](https://hidef.readthedocs.io/en/latest/?badge=latest)
-[![Downloads](https://pepy.tech/badge/hidef)](https://pepy.tech/project/hidef)
+[![Downloads](https://pepy.tech/badge/hidef/month)](https://pepy.tech/project/hidef)
 
 <img src="https://github.com/fanzheng10/HiDeF/blob/master/fig1.png" width="400">
 
 ## Introduction
 
-HiDeF is an analysis framework to robustly resolve the hierarchical structures of networks based on multiscale community detection and the concepts of persistent homology. 
+HiDeF is a method for robustly resolving the hierarchical structures of networks based on multiscale community detection and the concepts of persistent homology. 
 
 HiDeF is described in the following manuscript:  
 
-Zheng, F., Zhang, S., Churas, C. et al. HiDeF: identifying persistent structures in multiscale ‘omics data. Genome Biol 22, 21 (2021). https://doi.org/10.1186/s13059-020-02228-4
+Zheng, F., Zhang, S., Churas, C. et al., [HiDeF: identifying persistent structures in multiscale ‘omics data](https://doi.org/10.1186/s13059-020-02228-4). Genome Biol 22, 21 (2021).
 
 ## Installation (Python package)
 
