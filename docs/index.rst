@@ -26,13 +26,20 @@ Installation via ``pip`` ::
 
 Cytoscape
 ^^^^^^^^^^
-HiDeF is separately distributed via the `CDAPS <http://apps.cytoscape.org/apps/cycommunitydetection>`_ framework [#f2]_ in Cytoscape.
+HiDeF is separately distributed via the `CDAPS <https://apps.cytoscape.org/apps/cycommunitydetection>`_ framework [#f2]_ in Cytoscape.
 
 .. Note::
    We try to maintain timely synchronization of the HiDeF versions across the Python package and Cytoscape. However, it may be possible to have small difference in results across the platforms due to the Cytoscape version is behind the latest version of the Python package.
 
 What's new
 ___________
+
+Version 1.1.4:
+
+- Updated ``setup.py`` and added ``requirements.txt`` to specify minimum versions of
+  packages HiDef depends on.
+
+- Added ``Makefile`` which includes shortcuts to build and deploy software
 
 Version 1.1.3:
 
