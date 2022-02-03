@@ -6,15 +6,24 @@ https://github.com/fanzheng10/HiDeF
 from setuptools import setup, find_packages
 from os import path
 from io import open
+import re
+import pathlib
 
-here = path.abspath(path.dirname(__file__))
+here = pathlib.Path(__file__).parent
+
+install_requires = (here / "requirements.txt").read_text().splitlines()
+
+with open(path.join('hidef', '__init__.py')) as ver_file:
+    for line in ver_file:
+        if line.startswith('__version__'):
+            version = re.sub("'", "", line[line.index("'"):])
 
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
     name='hidef',
-    version='1.1.3',
+    version=version,
     description='A package for building a hierarchy based on multiple partitions on graph nodes.', 
     long_description=long_description,  
 
@@ -41,13 +50,7 @@ setup(
     packages=find_packages(exclude=['contrib', 'docs', 'tests']), 
 
     python_requires='>=3.6, <4',
-    install_requires=['numpy',
-                      'networkx',
-                      'scipy',
-                      'pandas',
-                      'louvain',
-                      'leidenalg',
-                      'scikit-learn'],
+    install_requires=install_requires,
 
     project_urls={ 
         'Bug Reports': 'https://github.com/fanzheng10/HiDeF/issues',
