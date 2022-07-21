@@ -375,7 +375,7 @@ class Weaver(object):
 
         # remove grandparents (redundant edges)
         LOGGER.timeit('_redundancy')
-        LOGGER.info('removing redudant edges...')
+        LOGGER.info('removing redundant edges...')
         redundant = []
 
         for node in G.nodes():

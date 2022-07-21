@@ -650,6 +650,11 @@ def output_all(wv, names, out, persistence=None, iter=False, skipgml=False, t=0.
     output_edges(wv, names, out)
     if skipgml is False:
         output_gml(out)
+    # save weaver object to disk
+    filename = out + '.weaver'
+    outfile = open(filename, 'wb')
+    pickle.dump(wv, outfile)
+    outfile.close()
 
     return wv  # return the last step of weaver
 
@@ -770,4 +775,4 @@ if __name__ == '__main__':
     else:
         names = nodenames
 
-    output_all(wv, names, args.o, persistence=len_component, iter=args.iter, skipgml=args.skipgml)
+    _ = output_all(wv, names, args.o, persistence=len_component, iter=args.iter, skipgml=args.skipgml)

@@ -1,7 +1,7 @@
 __version__ = '1.1.4a1'
 __release__ = __version__
 
-__all__ = ['hidef_finder', 'weaver', 'utils', 'logger']
+__all__ = ['hidef_finder', 'weaver', 'utils', 'logger', 'dash_utils']
 
 from .logger import PackageLogger
 LOGGER = PackageLogger('hidef')
