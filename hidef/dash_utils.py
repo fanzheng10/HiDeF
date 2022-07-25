@@ -1,3 +1,7 @@
+from hidef import weaver
+
+import pandas as pd
+
 def hier_digraph_to_dash(H, coordinates=None, hide_terminal_nodes=False, add_node_data=False):
   '''
   Convert a digraph or weaver object (created in HiDeF) to a format readable by dash-cytoscape.
@@ -32,7 +36,7 @@ def hier_digraph_to_dash(H, coordinates=None, hide_terminal_nodes=False, add_nod
       node_name = str(v)
       if isWeaver and hide_terminal_nodes:
         continue
-    elements.append({'data': {'id': node_name, 'label': node_name}})
+    elements.append({'data': {'id': node_name, 'label': node_name.replace('Cluster', '')}})
     element_index[node_name] = len(elements) - 1
 
     if add_node_data:
@@ -99,3 +103,18 @@ def subnet_to_dash(df_net, node_names):
     elements.append({'data': {'source': v, 'target': w}})
   return elements
 
+
+def get_hier_specs(H):
+  names = []
+  persistence_dict = {}
+  size_dict = {}
+  for k, v in H.nodes(data=True):
+    names.append(k)
+    if 'Stability' in v.keys():
+      persistence_dict[k] = v['Stability']
+    if 'Size' in v.keys():
+      size_dict[k] = v['Size']
+  df = pd.DataFrame(index=names)
+  df['Persistence'] = pd.Series(persistence_dict)
+  df['Size'] = pd.Series(size_dict)
+  return df
