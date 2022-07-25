@@ -12,6 +12,11 @@ HiDeF is described in the following manuscript:
 
 Zheng, F., Zhang, S., Churas, C. et al., [HiDeF: identifying persistent structures in multiscale ‘omics data](https://doi.org/10.1186/s13059-020-02228-4). Genome Biol 22, 21 (2021).
 
+## Updates
+
+- `1.1.4` Add [Colab notebooks](https://github.com/fanzheng10/HiDeF/blob/master/analysis/protein_interaction_network_app.ipynb) allowing quick exploration of HiDeF results - now applicable to models based on protein-protein interaction network.  
+- `1.1.3` Stable release around the time of paper publication, the first version available with `pip`.  
+
 ## Installation (Python package)
 
 With pip:  
