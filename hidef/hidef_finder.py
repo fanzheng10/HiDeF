@@ -714,7 +714,7 @@ if __name__ == '__main__':
         nodedict = {x: i for i, x in enumerate(nodenames)}
         max_i = len(nodenames) - 1
         for G in args.g:
-            tmpf = '_tmp.' + os.path.basename(G)
+            tmpf = '_tmp.' + os.path.basename(G) + str(np.random.randint(1e10)) 
             with open(G) as fh, open(tmpf, 'w') as ofh:
                 for l in fh:
                     ll = l.strip().split()
@@ -726,6 +726,8 @@ if __name__ == '__main__':
         Gs = [ig.Graph.Read_Edgelist(G, directed=False) for G in tmpfiles]
     else:
         Gs = [ig.Graph.Read_Ncol(G, directed=False) for G in args.g]
+    for tmpf in tmpfiles:
+        os.system('rm {}'.format(tmpf))
 
     # G_component = list(G.components(mode='WEAK'))
     # if args.n != None:
