@@ -724,10 +724,11 @@ if __name__ == '__main__':
                 # network should have, even no edges are connected. This is a self edge and won't affect the result
             tmpfiles.append(tmpf)
         Gs = [ig.Graph.Read_Edgelist(G, directed=False) for G in tmpfiles]
+        for tmpf in tmpfiles:
+            os.system('rm {}'.format(tmpf))
     else:
         Gs = [ig.Graph.Read_Ncol(G, directed=False) for G in args.g]
-    for tmpf in tmpfiles:
-        os.system('rm {}'.format(tmpf))
+
 
     # G_component = list(G.components(mode='WEAK'))
     # if args.n != None:
