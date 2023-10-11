@@ -54,6 +54,8 @@ def jaccard_matrix(matA, matB, threshold=0.75, return_mat=False):  # assume matA
 
     either = (np.tile(matA.getnnz(axis=1), (matB.shape[0], 1)) + matB.getnnz(axis=1)[:, np.newaxis]).T - both
     jac = 1.0 * both / either
+    if isinstance(jac, (csr_matrix, coo_matrix)):
+        jac = jac.toarray()
     index = np.where(jac > threshold)
     if not return_mat:
         return index
