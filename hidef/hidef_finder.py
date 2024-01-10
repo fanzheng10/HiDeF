@@ -3,7 +3,9 @@
 import networkx as nx
 import igraph as ig
 import argparse
-import os, time
+import os
+import time
+import uuid
 import pickle
 import numpy as np
 import pandas as pd
@@ -714,7 +716,7 @@ if __name__ == '__main__':
         nodedict = {x: i for i, x in enumerate(nodenames)}
         max_i = len(nodenames) - 1
         for G in args.g:
-            tmpf = '_tmp.' + os.path.basename(G) + str(np.random.randint(1e10)) 
+            tmpf = '_tmp.' + os.path.basename(G) + str(uuid.uuid4())
             with open(G) as fh, open(tmpf, 'w') as ofh:
                 for l in fh:
                     ll = l.strip().split()
@@ -725,7 +727,7 @@ if __name__ == '__main__':
             tmpfiles.append(tmpf)
         Gs = [ig.Graph.Read_Edgelist(G, directed=False) for G in tmpfiles]
         for tmpf in tmpfiles:
-            os.system('rm {}'.format(tmpf))
+            os.unlink(tmpf)
     else:
         Gs = [ig.Graph.Read_Ncol(G, directed=False) for G in args.g]
 
