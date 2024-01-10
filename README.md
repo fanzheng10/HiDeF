@@ -14,6 +14,7 @@ Zheng, F., Zhang, S., Churas, C. et al., [HiDeF: identifying persistent structur
 
 ## Updates
 
+- `1.1.5` Fixed bug where ``_tmp`` edge list temp files collide if multiple instances of ``hidef_finder.py`` are run on same machine 
 - `1.1.4` Add [Colab notebooks](https://github.com/fanzheng10/HiDeF/blob/master/analysis/protein_interaction_network_app.ipynb) allowing quick exploration of HiDeF results - now applicable to models based on protein-protein interaction network.  
 - `1.1.3` Stable release around the time of paper publication, the first version available with `pip`.  
 
