@@ -1,4 +1,4 @@
-__version__ = '1.1.5a3'
+__version__ = '1.1.5'
 __release__ = __version__
 
 __all__ = ['hidef_finder', 'weaver', 'utils', 'logger', 'dash_utils']
